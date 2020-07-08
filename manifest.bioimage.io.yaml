@@ -1,0 +1,35 @@
+format_version: 0.2.0
+config:
+  id: imjoy
+  name: ImJoy
+  tags:
+    - imjoy
+  logo: https://raw.githubusercontent.com/imjoy-team/bioimage-io-models/master/asset/imjoy-icon.svg
+  icon: https://raw.githubusercontent.com/imjoy-team/bioimage-io-models/master/asset/imjoy-icon.svg
+  splash_title: ImJoy
+  splash_subtitle: Deep Learning Made Easy!
+  splash_feature_list:
+    - Minimal and flexible plugin powered web application
+    - Server-less progressive web application with offline support
+    - Rich and interactive user interface powered by web technologies
+  explore_button_text: Start Exploring
+  background_image: static/img/zoo-background.svg
+  resource_types:
+    - notebook
+    - application
+  default_type: application
+  url_root: https://raw.githubusercontent.com/imjoy-team/bioimage-io-models/master
+
+application:
+  - id: HPA-Classification
+    source: https://raw.githubusercontent.com/bioimage-io/tfjs-bioimage-io/master/apps/HPA-Classification.imjoy.html
+  - id: Kaibu
+    source: https://raw.githubusercontent.com/imjoy-team/kaibu/master/Kaibu.imjoy.html
+  - id: Notebook Preview
+    source: https://raw.githubusercontent.com/bioimage-io/nbpreview/master/notebook-preview.imjoy.html
+
+notebook:
+  - id: vitessce-image-viewer
+    source: https://gist.githubusercontent.com/oeway/582856630a0aed4d4d221e54df1b3ece/raw/vitessce-image-viewer.notebook.yaml
+    links:
+      - Notebook Preview
