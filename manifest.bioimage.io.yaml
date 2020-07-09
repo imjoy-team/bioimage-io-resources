@@ -4,8 +4,8 @@ config:
   name: ImJoy
   tags:
     - imjoy
-  logo: https://raw.githubusercontent.com/imjoy-team/bioimage-io-models/master/asset/imjoy-icon.svg
-  icon: https://raw.githubusercontent.com/imjoy-team/bioimage-io-models/master/asset/imjoy-icon.svg
+  logo: https://imjoy.io/static/img/imjoy-icon.svg
+  icon: https://imjoy.io/static/img/imjoy-icon.svg
   splash_title: ImJoy
   splash_subtitle: Deep Learning Made Easy!
   splash_feature_list:
