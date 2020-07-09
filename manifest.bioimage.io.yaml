@@ -21,8 +21,6 @@ config:
   url_root: https://raw.githubusercontent.com/imjoy-team/bioimage-io-models/master
 
 application:
-  - id: HPA-Classification
-    source: https://raw.githubusercontent.com/bioimage-io/tfjs-bioimage-io/master/apps/HPA-Classification.imjoy.html
   - id: Kaibu
     source: https://raw.githubusercontent.com/imjoy-team/kaibu/master/Kaibu.imjoy.html
   - id: Notebook Preview
