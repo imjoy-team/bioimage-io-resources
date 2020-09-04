@@ -21,11 +21,11 @@
 <script lang="javascript">
 class ImJoyPlugin {
     async setup() {
-    api.log('initialized')
+        api.log('initialized')
     }
 
     async run(ctx) {
-    api.createWindow({src: "https://hms-dbmi.github.io/vizarr?source="+ctx.data.source, passive: true})
+        await api.createWindow({src: "https://hms-dbmi.github.io/vizarr?source="+ctx.data.source, passive: true})
     }
 }
 
