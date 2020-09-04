@@ -48,4 +48,4 @@ dataset:
     covers:
       - https://raw.githubusercontent.com/imjoy-team/bioimage-io-models/master/asset/LuCa-7color_Scan1.png
     links:
-      - Vizarr
+      - vizarr
