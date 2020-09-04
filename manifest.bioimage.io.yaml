@@ -27,7 +27,7 @@ application:
     source: https://raw.githubusercontent.com/bioimage-io/nbpreview/master/notebook-preview.imjoy.html
   - id: ImageJ.JS
     source: https://raw.githubusercontent.com/imjoy-team/bioimage-io-models/master/src/imagej-js.imjoy.html
-  - id: Vizarr
+  - id: vizarr
     source: https://raw.githubusercontent.com/imjoy-team/bioimage-io-models/master/src/vizarr.imjoy.html
 
 notebook:
