@@ -29,6 +29,10 @@ application:
     source: https://raw.githubusercontent.com/imjoy-team/bioimage-io-models/master/src/imagej-js.imjoy.html
   - id: vizarr
     source: https://raw.githubusercontent.com/imjoy-team/bioimage-io-models/master/src/vizarr.imjoy.html
+  - id: CellPose
+    source: https://raw.githubusercontent.com/imjoy-team/bioimage-io-models/master/src/cellpose.imjoy.html
+  - id: CellPose-ImageJ
+    source: https://gist.githubusercontent.com/oeway/c9592f23c7ee147085f0504d2f3e993a/raw/CellPose-ImageJ.imjoy.html
 
 notebook:
   - id: vitessce-image-viewer
