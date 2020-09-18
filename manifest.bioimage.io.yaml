@@ -32,7 +32,7 @@ application:
   - id: CellPose
     source: https://raw.githubusercontent.com/imjoy-team/bioimage-io-models/master/src/cellpose.imjoy.html
   - id: CellPose-ImageJ
-  source: https://raw.githubusercontent.com/imjoy-team/bioimage-io-models/master/src/cellpose-imagej.imjoy.html
+    source: https://raw.githubusercontent.com/imjoy-team/bioimage-io-models/master/src/cellpose-imagej.imjoy.html
 
 notebook:
   - id: vitessce-image-viewer
