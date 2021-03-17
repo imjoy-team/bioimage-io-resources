@@ -21,7 +21,7 @@ config:
   url_root: https://raw.githubusercontent.com/imjoy-team/bioimage-io-models/master
 
 application:
-  - id: BioImageIO Packager
+  - id: BioImageIO-Packager
     source: https://raw.githubusercontent.com/imjoy-team/bioimage-io-models/master/src/bioimageio-packager.imjoy.html
   - id: Notebook Preview
     source: https://raw.githubusercontent.com/bioimage-io/nbpreview/master/notebook-preview.imjoy.html
