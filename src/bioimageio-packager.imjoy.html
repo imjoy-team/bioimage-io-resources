@@ -1,125 +1,125 @@
 <config lang="json">
 {
-    "name": "BioImageIO-Packager",
-    "type": "window",
-    "tags": [],
-    "ui": "",
-    "version": "0.1.2",
-    "api_version": "0.1.5",
-    "description": "Exporting BioImage.IO model packages from the model description file",
-    "icon": "https://raw.githubusercontent.com/imjoy-team/bioimage-io-models/master/asset/package-icon.png",
-    "inputs": null,
-    "outputs": null,
-    "env": "",
-    "requirements": [
-        "https://cdnjs.cloudflare.com/ajax/libs/vue/2.5.22/vue.min.js",
-        "https://static.imjoy.io/spectre.css/spectre.min.css",
-        "https://static.imjoy.io/spectre.css/spectre-exp.min.css",
-        "https://static.imjoy.io/spectre.css/spectre-icons.min.css",
-        "https://stuk.github.io/jszip/dist/jszip.js",
-        "https://cdnjs.cloudflare.com/ajax/libs/js-yaml/4.0.0/js-yaml.min.js",
-        "https://cdnjs.cloudflare.com/ajax/libs/axios/0.19.2/axios.min.js"
-    ],
-    "dependencies": [],
-    "defaults": {"w": 20, "h": 10},
-    "runnable": true
+  "name": "BioImageIO-Packager",
+  "type": "window",
+  "tags": [],
+  "ui": "",
+  "version": "0.1.3",
+  "api_version": "0.1.7",
+  "description": "Exporting BioImage.IO model packages from the model description file",
+  "icon": "extension",
+  "inputs": null,
+  "outputs": null,
+  "env": "",
+  "requirements": [
+      "https://cdnjs.cloudflare.com/ajax/libs/vue/2.5.22/vue.min.js",
+      "https://static.imjoy.io/spectre.css/spectre.min.css",
+      "https://static.imjoy.io/spectre.css/spectre-exp.min.css",
+      "https://static.imjoy.io/spectre.css/spectre-icons.min.css",
+      "https://stuk.github.io/jszip/dist/jszip.js",
+      "https://cdnjs.cloudflare.com/ajax/libs/js-yaml/4.0.0/js-yaml.min.js",
+      "https://cdnjs.cloudflare.com/ajax/libs/axios/0.19.2/axios.min.js"
+  ],
+  "dependencies": [],
+  "defaults": {"w": 20, "h": 10},
+  "runnable": true
 }
 </config>
 
 <script lang="javascript">
 
 function isZenodoFileUrl(url){
-    const myRegexp = /https?:\/\/zenodo.org\/record\/([a-zA-Z0-9-]+)\/files\/(.*)/g;
-    const match = myRegexp.exec(url);
-    if (!match || match.length !== 3) {
+  const myRegexp = /https?:\/\/zenodo.org\/record\/([a-zA-Z0-9-]+)\/files\/(.*)/g;
+  const match = myRegexp.exec(url);
+  if (!match || match.length !== 3) {
     return false
-    }
-    return true
+  }
+  return true
 }
 
 async function convertZenodoFileUrl(url) {
-    const myRegexp = /https?:\/\/zenodo.org\/record\/([a-zA-Z0-9-]+)\/files\/(.*)/g;
-    const match = myRegexp.exec(url);
-    if (!match || match.length !== 3) {
+  const myRegexp = /https?:\/\/zenodo.org\/record\/([a-zA-Z0-9-]+)\/files\/(.*)/g;
+  const match = myRegexp.exec(url);
+  if (!match || match.length !== 3) {
     throw new Error("Invalid zenodo url");
-    }
-    const [fullUrl, depositId, fileName] = match;
-    const blob = await fetch(
+  }
+  const [fullUrl, depositId, fileName] = match;
+  const blob = await fetch(
     `https://zenodo.org/api/records/${depositId}`
-    ).then(r => r.blob());
-    const data = JSON.parse(await new Response(blob).text());
-    const fn = fileName.split("?")[0];
-    const fileObj = data.files.filter(file => {
+  ).then(r => r.blob());
+  const data = JSON.parse(await new Response(blob).text());
+  const fn = fileName.split("?")[0];
+  const fileObj = data.files.filter(file => {
     return file.key === fn;
-    })[0];
-    return fileObj && fileObj.links.self;
+  })[0];
+  return fileObj && fileObj.links.self;
 }
 
 async function fetchFile(url){
-    const response = await axios({
+  const response = await axios({
     url,
     method: 'GET',
     responseType: 'blob',
     onDownloadProgress: (progressEvent) => {
-        api.showMessage(`Downloading weights ${progressEvent.loaded}/${progressEvent.total}`);
-        api.showProgress(progressEvent.loaded/progressEvent.total)
+      api.showMessage(`Downloading weights ${progressEvent.loaded}/${progressEvent.total}`);
+      api.showProgress(progressEvent.loaded/progressEvent.total)
     }
-    })
-    const filename = url.split('/').pop().split('#')[0].split('?')[0];
-    const blob = new Blob([response.data]);
-    const file = new File([blob], filename, {type: "application/octet-stream", lastModified: Date.now()});
-    return file
+  })
+  const filename = url.split('/').pop().split('#')[0].split('?')[0];
+  const blob = new Blob([response.data]);
+  const file = new File([blob], filename, {type: "application/octet-stream", lastModified: Date.now()});
+  return file
 }
 
 async function downloadModel(rootUrl, spec, weightsFormat){
-    let weightsURL = spec.weights[weightsFormat].source
-    if(!weightsURL.startsWith('http')){
-        weightsURL = rootUrl + '/' + weightsURL.replace('./', '')
-    }
-    await api.showMessage('Downloading weights from ' + weightsURL)
-    const url = await convertZenodoFileUrl(weightsURL)
-    const weightsFile = await fetchFile(url)
-    const zip = new JSZip()
-    zip.file(weightsFile.name, weightsFile)
+  let weightsURL = spec.weights[weightsFormat].source
+  if(!weightsURL.startsWith('http')){
+      weightsURL = rootUrl + '/' + weightsURL.replace('./', '')
+  }
+  await api.showMessage('Downloading weights from ' + weightsURL)
+  const url = await convertZenodoFileUrl(weightsURL)
+  const weightsFile = await fetchFile(url)
+  const zip = new JSZip()
+  zip.file(weightsFile.name, weightsFile)
 
-    let attachments = spec.attachments && spec.attachments['files']
-    if(spec.weights[weightsFormat].attachments && spec.weights[weightsFormat].attachments.files){
+  let attachments = spec.attachments && spec.attachments['files']
+  if(spec.weights[weightsFormat].attachments && spec.weights[weightsFormat].attachments.files){
     attachments = attachments.concat(spec.weights[weightsFormat].attachments.files)
-    }
-    if(attachments){
+  }
+  if(attachments){
     for(let attachment of attachments){
-        let url = attachment
-        if(!url.startsWith('http')){
+      let url = attachment
+      if(!url.startsWith('http')){
         url = rootUrl + '/' + url.replace('./', '')
-        }
-        await api.showMessage(`Downloading ${url}`)
-        if(isZenodoFileUrl(url))
+      }
+      await api.showMessage(`Downloading ${url}`)
+      if(isZenodoFileUrl(url))
         url = await convertZenodoFileUrl(url)
-        const file = await fetchFile(url)
-        zip.file(file.name, file)
+      const file = await fetchFile(url)
+      zip.file(file.name, file)
     }
-    }
+  }
 
-    const exportSpec = JSON.parse(JSON.stringify(spec));
-    exportSpec.weights[weightsFormat].source = './' + weightsFile.name
-    zip.file("model.yaml", jsyaml.dump(exportSpec));
-    await api.showMessage('Making zip package...')
-    const zipBlob = await zip.generateAsync({ type:"blob",
+  const exportSpec = JSON.parse(JSON.stringify(spec));
+  exportSpec.weights[weightsFormat].source = './' + weightsFile.name
+  zip.file("model.yaml", jsyaml.dump(exportSpec));
+  await api.showMessage('Making zip package...')
+  const zipBlob = await zip.generateAsync({ type:"blob",
     compression: "DEFLATE",
     compressionOptions: {
         level: 9
     }},
     (mdata)=>{
-        api.showProgress(mdata.percent)
+      api.showProgress(mdata.percent)
     }
-    )
-    await api.exportFile(zipBlob, spec.name.replace(/\s+/g, '-').toLowerCase() + '.zip')
+  )
+  await api.exportFile(zipBlob, spec.name.replace(/\s+/g, '-').toLowerCase() + '.zip')
 
 }
 
 const app = new Vue({
-    el: '#app',
-    data: {
+  el: '#app',
+  data: {
     modelInfo: null,
     format: null,
     status: "",
@@ -127,67 +127,71 @@ const app = new Vue({
     progress: 0,
     spec: null,
     rootUrl: null
-    },
-    methods: {
+  },
+  methods: {
     async init(){
-        const specUrl = this.modelInfo.source
-        const tmp = specUrl.split('/')
-        this.rootUrl = tmp.slice(0, tmp.length-1).join('/')
-        const response = await fetch(specUrl)
-        this.spec = jsyaml.load(await response.text())
+      const specUrl = this.modelInfo.source
+      const tmp = specUrl.split('/')
+      this.rootUrl = tmp.slice(0, tmp.length-1).join('/')
+      const response = await fetch(specUrl)
+      this.spec = jsyaml.load(await response.text())
     },
     async download(){
-        try{
+      try{
         this.loading = true;
         if(this.format === 'default')
-            await api.utils.openUrl(spec.download_url)
+          await api.utils.openUrl(spec.download_url)
         else
-            await downloadModel(this.rootUrl, this.spec, this.format)
-        }
-        finally{
+          await downloadModel(this.rootUrl, this.spec, this.format)
+      }
+      finally{
         this.progress = 0
         this.loading = false
-        }
+      }
 
     }
-    }
+  }
 })
 
 class ImJoyPlugin {
-    async setup() {
+  async setup() {
 
-    }
+  }
 
-    async run(ctx) {
+  async run(ctx) {
     app.modelInfo = ctx.data;
     await app.init()
     app.$forceUpdate();
-    }
+  }
 }
 
 api.export(new ImJoyPlugin())
 </script>
 
 <window lang="html">
-    <div style="text-align: center;" id="app">
+  <div style="text-align: center;" id="app">
     <h1 v-if="modelInfo">{{modelInfo.name}}</h1>
     <h3>Model Packager</h3>
     <div v-if="spec" class="form-group">
-        <label class="form-label">Weights Format</label>
-        <select class="form-select" v-model="format">
+      <label class="form-label">Weights Format</label>
+      <select class="form-select" v-model="format">
         <option>Choose an option</option>
         <option v-for="f in Object.keys(spec.weights)" :value="f" :key="f">{{f}}</option>
         <option v-if="spec.download_url" value="default"></option>
-        </select>
+      </select>
     </div>
     <p v-else>No model selected.</p>
-    <a v-if="modelInfo.source" target="_blank" :href="modelInfo.source">source</a>
+    <a v-if="modelInfo && modelInfo.source" target="_blank" :href="modelInfo.source">source</a>
+    <br>
     <button class="btn" v-if="format" @click="download()">Download</button>
     <div v-if="loading" class="loading loading-lg"></div>
     <progress v-if="progress" class="progress" :value="progress" max="100"></progress>
     <div class="d-block">{{status}}</div>
-    </div>
+  </div>
 </window>
 
 <style lang="css">
+.form-group {
+  margin: 20px;
+}
 </style>
