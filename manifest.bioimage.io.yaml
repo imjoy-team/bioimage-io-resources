@@ -21,8 +21,8 @@ config:
   url_root: https://raw.githubusercontent.com/imjoy-team/bioimage-io-models/master
 
 application:
-  - id: Kaibu
-    source: https://raw.githubusercontent.com/imjoy-team/kaibu/master/Kaibu.imjoy.html
+  - id: BioImageIO Packager
+    source: https://raw.githubusercontent.com/imjoy-team/bioimage-io-models/master/src/bioimageio-packager.imjoy.html
   - id: Notebook Preview
     source: https://raw.githubusercontent.com/bioimage-io/nbpreview/master/notebook-preview.imjoy.html
   - id: ImageJ.JS
@@ -33,14 +33,7 @@ application:
     source: https://raw.githubusercontent.com/imjoy-team/bioimage-io-models/master/src/vizarr.imjoy.html
   - id: CellPose
     source: https://raw.githubusercontent.com/imjoy-team/bioimage-io-models/master/src/cellpose.imjoy.html
-  - id: CellPose-ImageJ
-    source: https://raw.githubusercontent.com/imjoy-team/bioimage-io-models/master/src/cellpose-imagej.imjoy.html
 
-notebook:
-  - id: vitessce-image-viewer
-    source: https://gist.githubusercontent.com/oeway/582856630a0aed4d4d221e54df1b3ece/raw/vitessce-image-viewer.notebook.yaml
-    links:
-      - Notebook Preview
 
 dataset:
   - id: LuCa-7color
