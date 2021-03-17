@@ -27,9 +27,7 @@ jobs:
           python -m pip install --upgrade pip
           pip install -r requirements.txt
       - name: Compile manifest file
-        run: |
-          wget https://raw.githubusercontent.com/bioimage-io/bioimage-io-models/master/src/compile_model_manifest.py
-          python compile_model_manifest.py
+        run: sh compile.sh
 
       - name: Save build output
         uses: actions/upload-artifact@v1
