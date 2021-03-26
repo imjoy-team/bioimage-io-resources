@@ -4,7 +4,7 @@
   "type": "window",
   "tags": [],
   "ui": "",
-  "version": "0.1.5",
+  "version": "0.1.6",
   "api_version": "0.1.7",
   "description": "Exporting BioImage.IO model packages from the model description file",
   "icon": "https://raw.githubusercontent.com/imjoy-team/bioimage-io-models/master/asset/package-icon.png",
@@ -90,7 +90,7 @@ async function downloadModel(rootUrl, spec, weightsFormat, showMessage, showProg
   const zip = new JSZip()
   const exportSpec = JSON.parse(JSON.stringify(spec));
 
-  await api.showMessage('Downloading files...')
+  await showMessage('Downloading files...')
   let files = []
   const weightsURL = spec.weights[weightsFormat].source
   if(weightsURL){
@@ -140,7 +140,7 @@ async function downloadModel(rootUrl, spec, weightsFormat, showMessage, showProg
   for(let url of files){
     url = await resolveUrl(rootUrl, url)
     await showMessage(`Downloading ${url}`)
-    const file = await fetchFile(url)
+    const file = await fetchFile(url, showMessage, showProgress)
     zip.file(file.name, file)
     await showMessage(`file downloaded: ${file.name}`)
   }
@@ -216,7 +216,16 @@ class ImJoyPlugin {
   }
 
   async run(ctx) {
-    app.modelInfo = ctx.data;
+    if(!ctx.data || !ctx.data.source){
+      const specUrl = await api.prompt("Please paste the model spec url here", "https://raw.githubusercontent.com/deepimagej/models/master/defcon_density_map_estimation/model.yaml")
+      if(!specUrl) return
+      app.modelInfo = {
+        name: getFileName(specUrl),
+        source: specUrl
+      }
+    }
+    else
+      app.modelInfo = ctx.data;
     await app.init();
     app.$forceUpdate();
   }
