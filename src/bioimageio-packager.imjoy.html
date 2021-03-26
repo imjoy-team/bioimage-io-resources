@@ -4,7 +4,7 @@
   "type": "window",
   "tags": [],
   "ui": "",
-  "version": "0.1.6",
+  "version": "0.1.7",
   "api_version": "0.1.7",
   "description": "Exporting BioImage.IO model packages from the model description file",
   "icon": "https://raw.githubusercontent.com/imjoy-team/bioimage-io-models/master/asset/package-icon.png",
@@ -239,7 +239,7 @@ api.export(new ImJoyPlugin())
     <h1 v-if="modelInfo">{{modelInfo.name}}</h1>
     <h3>Model Packager</h3>
     <a v-if="modelInfo && modelInfo.source" target="_blank" :href="modelInfo.source">source</a>
-    <div v-if="spec" class="form-group">
+    <div v-if="spec && spec.weights" class="form-group">
       <label class="form-label">Weights Format</label>
       <select class="form-select" v-model="format">
         <option value="null">Choose an option</option>
@@ -247,7 +247,8 @@ api.export(new ImJoyPlugin())
         <option v-if="spec.download_url" value="default"></option>
       </select>
     </div>
-    <p v-else>No model selected.</p>
+    <p v-else-if="!spec">No model selected.</p>
+    <p v-else-if="!spec.weights">No model weights available.</p>
     <div v-if="loading" class="loading loading-lg"></div>
     <progress v-if="progress" class="progress" :value="progress" max="100"></progress>
     <div class="d-block">{{status}}</div>
