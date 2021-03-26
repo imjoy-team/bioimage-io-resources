@@ -4,7 +4,7 @@
   "type": "window",
   "tags": [],
   "ui": "",
-  "version": "0.1.4",
+  "version": "0.1.5",
   "api_version": "0.1.7",
   "description": "Exporting BioImage.IO model packages from the model description file",
   "icon": "https://raw.githubusercontent.com/imjoy-team/bioimage-io-models/master/asset/package-icon.png",
@@ -72,37 +72,85 @@ async function fetchFile(url, showMessage, showProgress){
   return file
 }
 
-async function downloadModel(rootUrl, spec, weightsFormat, showMessage, showProgress){
-  let weightsURL = spec.weights[weightsFormat].source
-  if(!weightsURL.startsWith('http')){
-      weightsURL = rootUrl + '/' + weightsURL.replace('./', '')
-  }
-  await showMessage('Downloading weights from ' + weightsURL)
-  const url = await convertZenodoFileUrl(weightsURL)
-  const weightsFile = await fetchFile(url, showMessage, showProgress)
-  const zip = new JSZip()
-  zip.file(weightsFile.name, weightsFile)
 
-  let attachments = spec.attachments && spec.attachments['files']
-  if(spec.weights[weightsFormat].attachments && spec.weights[weightsFormat].attachments.files){
-    attachments = attachments.concat(spec.weights[weightsFormat].attachments.files)
+async function resolveUrl(rootUrl, url){
+    if(!url.startsWith('http')){
+       url = rootUrl + '/' + url.replace('./', '')
+    }
+    if(isZenodoFileUrl(url)) url = await convertZenodoFileUrl(url)
+    return url
+}
+
+function getFileName(url){
+  return url.split('/').pop().split('#')[0].split('?')[0]
+}
+
+
+async function downloadModel(rootUrl, spec, weightsFormat, showMessage, showProgress){
+  const zip = new JSZip()
+  const exportSpec = JSON.parse(JSON.stringify(spec));
+
+  await api.showMessage('Downloading files...')
+  let files = []
+  const weightsURL = spec.weights[weightsFormat].source
+  if(weightsURL){
+    files.push(weightsURL)
+    exportSpec.weights[weightsFormat].source = './' + getFileName(weightsURL)
   }
-  if(attachments){
-    for(let attachment of attachments){
-      let url = attachment
-      if(!url.startsWith('http')){
-        url = rootUrl + '/' + url.replace('./', '')
-      }
-      await showMessage(`Downloading ${url}`)
-      if(isZenodoFileUrl(url))
-        url = await convertZenodoFileUrl(url)
-      const file = await fetchFile(url, showMessage, showProgress)
-      zip.file(file.name, file)
+  if(spec.attachments && spec.attachments['files']){
+    const fs = spec.attachments['files']
+    files = files.concat(fs)
+    const exportedFs = exportSpec.attachments['files']
+    for(let i=0;i<fs.length;i++){
+      exportedFs[i] = './' + getFileName(fs[i])
     }
   }
+  if(spec.weights[weightsFormat].attachments && spec.weights[weightsFormat].attachments.files){
+    const fs = spec.weights[weightsFormat].attachments.files
+    files = files.concat(fs)
+    const exportedFs = exportSpec.weights[weightsFormat].attachments.files
+    for(let i=0;i<fs.length;i++){
+      exportedFs[i] = './' + getFileName(fs[i])
+    }
+  }
+  if(spec.source && spec.source.startsWith('./')){
+    files.push(spec.source.split(':').slice(0,1))
+    exportSpec.source = './' + getFileName(spec.source)
+  }
+  if(spec.test_inputs && Array.isArray(spec.test_inputs)){
+    files = files.concat(spec.test_inputs)
+    for(let i=0;i<spec.test_inputs.length;i++){
+      exportSpec.test_inputs[i] = './' + getFileName(spec.test_inputs[i])
+    }
+  }
+  if(spec.test_outputs && Array.isArray(spec.test_outputs)){
+    files = files.concat(spec.test_outputs)
+    for(let i=0;i<spec.test_outputs.length;i++){
+      exportSpec.test_outputs[i] = './' + getFileName(spec.test_outputs[i])
+    }
+  }
+  if(spec.covers && Array.isArray(spec.covers)){
+    files = files.concat(spec.covers)
+    for(let i=0;i<spec.covers.length;i++){
+      exportSpec.covers[i] = './' + getFileName(spec.covers[i])
+    }
+  }
+  // remove duplicated files
+  files = [...new Set(files)]
+  for(let url of files){
+    url = await resolveUrl(rootUrl, url)
+    await showMessage(`Downloading ${url}`)
+    const file = await fetchFile(url)
+    zip.file(file.name, file)
+    await showMessage(`file downloaded: ${file.name}`)
+  }
 
-  const exportSpec = JSON.parse(JSON.stringify(spec));
-  exportSpec.weights[weightsFormat].source = './' + weightsFile.name
+  // clear other weights format
+  // and only keep the current one
+  const newWeights = {}
+  newWeights[weightsFormat] = exportSpec.weights[weightsFormat]
+  exportSpec.weights = newWeights
+
   zip.file("model.yaml", jsyaml.dump(exportSpec));
   await showMessage('Making zip package...')
   const zipBlob = await zip.generateAsync({ type:"blob",
