@@ -4,7 +4,7 @@
   "type": "window",
   "tags": [],
   "ui": "",
-  "version": "0.1.7",
+  "version": "0.1.8",
   "api_version": "0.1.7",
   "description": "Exporting BioImage.IO model packages from the model description file",
   "icon": "https://raw.githubusercontent.com/imjoy-team/bioimage-io-models/master/asset/package-icon.png",
@@ -86,10 +86,12 @@ function getFileName(url){
 }
 
 
-async function downloadModel(rootUrl, spec, weightsFormat, showMessage, showProgress){
+async function downloadModel(specUrl, spec, weightsFormat, showMessage, showProgress){
+  const tmp = specUrl.split('/')
+  const rootUrl = tmp.slice(0, tmp.length-1).join('/')
   const zip = new JSZip()
   const exportSpec = JSON.parse(JSON.stringify(spec));
-
+  const logs = []
   await showMessage('Downloading files...')
   let files = []
   const weightsURL = spec.weights[weightsFormat].source
@@ -138,11 +140,18 @@ async function downloadModel(rootUrl, spec, weightsFormat, showMessage, showProg
   // remove duplicated files
   files = [...new Set(files)]
   for(let url of files){
-    url = await resolveUrl(rootUrl, url)
-    await showMessage(`Downloading ${url}`)
-    const file = await fetchFile(url, showMessage, showProgress)
-    zip.file(file.name, file)
-    await showMessage(`file downloaded: ${file.name}`)
+    try{
+      url = await resolveUrl(rootUrl, url)
+      await showMessage(`Downloading ${url}`)
+      const file = await fetchFile(url, showMessage, showProgress)
+      zip.file(file.name, file)
+      await showMessage(`file downloaded: ${file.name}`)
+      logs.push(`downloaded file from ${url}`)
+    }
+    catch(e){
+      await api.alert(`Failed to download ${url}, error: ${e}`)
+      throw e
+    }
   }
 
   // clear other weights format
@@ -152,6 +161,10 @@ async function downloadModel(rootUrl, spec, weightsFormat, showMessage, showProg
   exportSpec.weights = newWeights
 
   zip.file("model.yaml", jsyaml.dump(exportSpec));
+  zip.file("package_info.json", JSON.stringify({
+    package_from: specUrl,
+    logs
+  }));
   await showMessage('Making zip package...')
   const zipBlob = await zip.generateAsync({ type:"blob",
     compression: "DEFLATE",
@@ -176,15 +189,13 @@ const app = new Vue({
     loading: false,
     progress: 0,
     spec: null,
-    rootUrl: null
   },
   methods: {
     async init(){
       const specUrl = this.modelInfo.source
-      const tmp = specUrl.split('/')
-      this.rootUrl = tmp.slice(0, tmp.length-1).join('/')
       const response = await fetch(specUrl)
       this.spec = jsyaml.load(await response.text())
+      this.specUrl = specUrl
     },
     async download(){
       try{
@@ -192,7 +203,7 @@ const app = new Vue({
         if(this.format === 'default')
           await api.utils.openUrl(spec.download_url)
         else
-          await downloadModel(this.rootUrl, this.spec, this.format, async (msg)=>{
+          await downloadModel(this.specUrl, this.spec, this.format, async (msg)=>{
             this.status = msg
             this.$forceUpdate()
           }, async (p)=>{
