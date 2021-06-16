@@ -180,7 +180,8 @@ const app = new Vue({
   },
   methods: {
     async init(){
-      const specUrl = this.modelInfo.source
+      const rdfFile = this.modelInfo.config&&this.modelInfo.config._rdf_file;
+      const specUrl = rdfFile || this.modelInfo.source
       const tmp = specUrl.split('/')
       this.rootUrl = tmp.slice(0, tmp.length-1).join('/')
       const response = await fetch(specUrl)
@@ -216,12 +217,12 @@ class ImJoyPlugin {
   }
 
   async run(ctx) {
-    if(!ctx.data || !ctx.data.source){
+    if(!ctx.data || (!ctx.data.config && !ctx.data.source)){
       const specUrl = await api.prompt("Please paste the model spec url here", "https://raw.githubusercontent.com/deepimagej/models/master/defcon_density_map_estimation/model.yaml")
       if(!specUrl) return
       app.modelInfo = {
         name: getFileName(specUrl),
-        source: specUrl
+        config: { bioimageio: { rdf_file: specUrl} }
       }
     }
     else
