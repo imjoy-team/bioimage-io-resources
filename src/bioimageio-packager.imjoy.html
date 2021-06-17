@@ -82,7 +82,7 @@ async function resolveUrl(rootUrl, url){
 }
 
 function getFileName(url){
-  return url.split('/').pop().split('#')[0].split('?')[0]
+  return './' + url.split('/').pop().split('#')[0].split('?')[0]
 }
 
 
@@ -95,14 +95,14 @@ async function downloadModel(rootUrl, spec, weightsFormat, showMessage, showProg
   const weightsURL = spec.weights[weightsFormat].source
   if(weightsURL){
     files.push(weightsURL)
-    exportSpec.weights[weightsFormat].source = './' + getFileName(weightsURL)
+    exportSpec.weights[weightsFormat].source = getFileName(weightsURL)
   }
   if(spec.attachments && spec.attachments['files']){
     const fs = spec.attachments['files']
     files = files.concat(fs)
     const exportedFs = exportSpec.attachments['files']
     for(let i=0;i<fs.length;i++){
-      exportedFs[i] = './' + getFileName(fs[i])
+      exportedFs[i] = getFileName(fs[i])
     }
   }
   if(spec.weights[weightsFormat].attachments && spec.weights[weightsFormat].attachments.files){
@@ -110,29 +110,56 @@ async function downloadModel(rootUrl, spec, weightsFormat, showMessage, showProg
     files = files.concat(fs)
     const exportedFs = exportSpec.weights[weightsFormat].attachments.files
     for(let i=0;i<fs.length;i++){
-      exportedFs[i] = './' + getFileName(fs[i])
+      exportedFs[i] = getFileName(fs[i])
     }
   }
+  // deprecate this after v0.4.0
   if(spec.source && spec.source.startsWith('./')){
-    files.push(spec.source.split(':').slice(0,1))
-    exportSpec.source = './' + getFileName(spec.source)
+    const src = spec.source.split(':').slice(0,1) // e.g. ./mynetwork:UNet
+    files.push(src)
+    exportSpec.source = getFileName(src)
   }
+  // deprecate this after v0.4.0
+  if(spec.dependencies && spec.dependencies.startsWith('./')){
+    const dep = spec.dependencies.split(':').slice(1, 2) // e.g. pip:./requirements.txt
+    files.push(dep) 
+    exportSpec.dependencies = getFileName(dep)
+  }
+  // after 0.4.0, rename source to architecture
+  if(spec.weights[weightsFormat]){
+    const wformat = spec.weights[weightsFormat];
+    if(wformat.architecture && wformat.architecture.startsWith('./')){
+      const src = wformat.architecture.split(':').slice(0,1) // e.g. ./mynetwork:UNet
+      files.push(src)
+      exportSpec.weights[weightsFormat].architecture = getFileName(src)
+    }
+    if(wformat.dependencies && wformat.dependencies.startsWith('./')){
+      const dep = wformat.dependencies.split(':').slice(1, 2) // e.g. pip:./requirements.txt
+      files.push(dep) 
+      exportSpec.weights[weightsFormat].dependencies = getFileName(dep)
+    }
+  }
+  if(spec.documentation && spec.documentation.startsWith('./')){
+    files.push(spec.documentation)
+    exportSpec.documentation = getFileName(spec.documentation)
+  }
+
   if(spec.test_inputs && Array.isArray(spec.test_inputs)){
     files = files.concat(spec.test_inputs)
     for(let i=0;i<spec.test_inputs.length;i++){
-      exportSpec.test_inputs[i] = './' + getFileName(spec.test_inputs[i])
+      exportSpec.test_inputs[i] = getFileName(spec.test_inputs[i])
     }
   }
   if(spec.test_outputs && Array.isArray(spec.test_outputs)){
     files = files.concat(spec.test_outputs)
     for(let i=0;i<spec.test_outputs.length;i++){
-      exportSpec.test_outputs[i] = './' + getFileName(spec.test_outputs[i])
+      exportSpec.test_outputs[i] = getFileName(spec.test_outputs[i])
     }
   }
   if(spec.covers && Array.isArray(spec.covers)){
     files = files.concat(spec.covers)
     for(let i=0;i<spec.covers.length;i++){
-      exportSpec.covers[i] = './' + getFileName(spec.covers[i])
+      exportSpec.covers[i] = getFileName(spec.covers[i])
     }
   }
   // remove duplicated files
