@@ -4,7 +4,7 @@
   "type": "window",
   "tags": [],
   "ui": "",
-  "version": "0.2.1",
+  "version": "0.2.2",
   "api_version": "0.1.7",
   "description": "Exporting BioImage.IO model packages from the model description file",
   "icon": "https://raw.githubusercontent.com/imjoy-team/bioimage-io-models/master/asset/download-icon.png",
@@ -281,7 +281,6 @@ api.export(new ImJoyPlugin())
         <div class="chip" v-for="consumer in weight.consumers" @click="download(weight.format)" >
           <img :src="consumer.icon" alt="consumer.name" class="avatar avatar-sm">
           {{consumer.name}}
-          <a href="#" class="btn btn-clear" aria-label="Close" role="button"></a>
         </div>
     </template>
     <br>
