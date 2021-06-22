@@ -4,7 +4,7 @@
   "type": "window",
   "tags": [],
   "ui": "",
-  "version": "0.2.2",
+  "version": "0.2.3",
   "api_version": "0.1.7",
   "description": "Exporting BioImage.IO model packages from the model description file",
   "icon": "https://raw.githubusercontent.com/imjoy-team/bioimage-io-models/master/asset/download-icon.png",
@@ -276,13 +276,17 @@ api.export(new ImJoyPlugin())
     <p>Model Packager</p>
     <h2 v-if="modelInfo">{{modelInfo.name}}</h2>
     
-    <a v-if="modelInfo && modelInfo.source" target="_blank" :href="modelInfo.source">source</a>
+    <a v-if="modelInfo && modelInfo.source" target="_blank" :href="modelInfo.source">source RDF file</a>
+    <br>
+    <br>
+    <p style="margin-bottom: 0px;">Click to download by consumer:</p>
     <template v-for="weight in spec.config.weights_consumers" :key="weight">
         <div class="chip" v-for="consumer in weight.consumers" @click="download(weight.format)" >
           <img :src="consumer.icon" alt="consumer.name" class="avatar avatar-sm">
           {{consumer.name}}
         </div>
     </template>
+    <br>
     <br>
     <div class="dropdown" v-if="spec && spec.config.weights_consumers">
       <a href="#" class="btn btn-link dropdown-toggle" tabindex="0">
