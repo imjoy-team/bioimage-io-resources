@@ -4,7 +4,7 @@
   "type": "window",
   "tags": [],
   "ui": "",
-  "version": "0.2.0",
+  "version": "0.2.1",
   "api_version": "0.1.7",
   "description": "Exporting BioImage.IO model packages from the model description file",
   "icon": "https://raw.githubusercontent.com/imjoy-team/bioimage-io-models/master/asset/download-icon.png",
@@ -213,6 +213,7 @@ const app = new Vue({
       this.rootUrl = tmp.slice(0, tmp.length-1).join('/')
       const response = await fetch(specUrl)
       this.spec = jsyaml.load(await response.text())
+      this.modelInfo.name = this.spec.name
       this.spec.config = this.spec.config || {}
       this.spec.config.weights_consumers = Object.keys(this.spec.weights).map((k)=>{
           const wformat = weight_formats_spec.weight_formats[k]
