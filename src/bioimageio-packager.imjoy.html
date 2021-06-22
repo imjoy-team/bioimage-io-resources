@@ -4,7 +4,7 @@
   "type": "window",
   "tags": [],
   "ui": "",
-  "version": "0.1.7",
+  "version": "0.1.8",
   "api_version": "0.1.7",
   "description": "Exporting BioImage.IO model packages from the model description file",
   "icon": "https://raw.githubusercontent.com/imjoy-team/bioimage-io-models/master/asset/download-icon.png",
@@ -56,7 +56,7 @@ async function convertZenodoFileUrl(url) {
 }
 
 async function fetchFile(url, showMessage, showProgress){
-  const response = await axios({
+    const response = await axios({
     url,
     method: 'GET',
     responseType: 'blob',
@@ -209,6 +209,7 @@ const app = new Vue({
     async init(){
       const rdfFile = this.modelInfo.config&&this.modelInfo.config._rdf_file;
       const specUrl = rdfFile || this.modelInfo.source
+      debugger
       const tmp = specUrl.split('/')
       this.rootUrl = tmp.slice(0, tmp.length-1).join('/')
       const response = await fetch(specUrl)
@@ -249,7 +250,7 @@ class ImJoyPlugin {
       if(!specUrl) return
       app.modelInfo = {
         name: getFileName(specUrl),
-        config: { bioimageio: { rdf_file: specUrl} }
+        config: { _rdf_file: specUrl }
       }
     }
     else
