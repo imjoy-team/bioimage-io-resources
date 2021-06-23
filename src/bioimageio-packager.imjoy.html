@@ -4,7 +4,7 @@
   "type": "window",
   "tags": [],
   "ui": "",
-  "version": "0.2.4",
+  "version": "0.2.5",
   "api_version": "0.1.7",
   "description": "Exporting BioImage.IO model packages from the model description file",
   "icon": "https://raw.githubusercontent.com/imjoy-team/bioimage-io-models/master/asset/download-icon.png",
@@ -55,7 +55,29 @@ async function convertZenodoFileUrl(url) {
   return fileObj && fileObj.links.self;
 }
 
+  
+async function convertZenodoFileUrl(url) {
+  const myRegexp = /zenodo.org\/record\/([a-zA-Z0-9-]+)\/files\/(.*)/g;
+  const match = myRegexp.exec(url);
+  if (!match || match.length !== 3) {
+    return null
+  }
+  const [fullUrl, depositId, fileName] = match;
+  if(url.includes('sandbox.zenodo.org'))
+    url = `https://sandbox.zenodo.org/api/records/${depositId}`;
+  else
+    url = `https://zenodo.org/api/records/${depositId}`;
+  const blob = await fetch(url).then(r => r.blob());
+  const data = JSON.parse(await new Response(blob).text());
+  const fn = fileName.split("?")[0];
+  const fileObj = data.files.filter(file => {
+    return file.key === fn;
+  })[0];
+  return fileObj.links.self;
+}
+
 async function fetchFile(url, showMessage, showProgress){
+    url = await convertZenodoFileUrl(url) || url;
     const response = await axios({
     url,
     method: 'GET',
@@ -208,16 +230,15 @@ const app = new Vue({
   methods: {
     async init(weight_formats_spec){
       const rdfFile = this.modelInfo.config&&this.modelInfo.config._rdf_file;
-      const specUrl = rdfFile || this.modelInfo.source
+      let specUrl = rdfFile || this.modelInfo.source
       const tmp = specUrl.split('/')
       this.rootUrl = tmp.slice(0, tmp.length-1).join('/')
+      specUrl = await convertZenodoFileUrl(specUrl) || specUrl
       const response = await fetch(specUrl)
-           debugger
       this.spec = jsyaml.load(await response.text())
    
       this.modelInfo.name = this.spec.name
       this.spec.config = this.spec.config || {}
-        console.log('====', this.spec, this.spec.weights, weight_formats_spec)
       this.spec.config.weights_consumers = Object.keys(this.spec.weights).map((k)=>{
           const wformat = weight_formats_spec.weight_formats[k]
           if(wformat)
