@@ -4,7 +4,7 @@
   "type": "window",
   "tags": [],
   "ui": "",
-  "version": "0.2.3",
+  "version": "0.2.4",
   "api_version": "0.1.7",
   "description": "Exporting BioImage.IO model packages from the model description file",
   "icon": "https://raw.githubusercontent.com/imjoy-team/bioimage-io-models/master/asset/download-icon.png",
@@ -212,12 +212,18 @@ const app = new Vue({
       const tmp = specUrl.split('/')
       this.rootUrl = tmp.slice(0, tmp.length-1).join('/')
       const response = await fetch(specUrl)
+           debugger
       this.spec = jsyaml.load(await response.text())
+   
       this.modelInfo.name = this.spec.name
       this.spec.config = this.spec.config || {}
+        console.log('====', this.spec, this.spec.weights, weight_formats_spec)
       this.spec.config.weights_consumers = Object.keys(this.spec.weights).map((k)=>{
           const wformat = weight_formats_spec.weight_formats[k]
-          return {"format": k, "name": wformat.name, "consumers": wformat.consumers.map((k)=>weight_formats_spec.consumers[k])}
+          if(wformat)
+            return {"format": k, "name": wformat.name, "consumers": wformat.consumers.map((k)=>weight_formats_spec.consumers[k])}
+          else
+            return {"format": k, "name": k, "consumers": null}
       })
       
     },
@@ -281,7 +287,7 @@ api.export(new ImJoyPlugin())
     <br>
     <p style="margin-bottom: 0px;">Click to download by consumer:</p>
     <template v-for="weight in spec.config.weights_consumers" :key="weight">
-        <div class="chip" v-for="consumer in weight.consumers" @click="download(weight.format)" >
+        <div v-if="weight.consumers" class="chip" v-for="consumer in weight.consumers" @click="download(weight.format)" >
           <img :src="consumer.icon" alt="consumer.name" class="avatar avatar-sm">
           {{consumer.name}}
         </div>
