@@ -306,7 +306,7 @@ api.export(new ImJoyPlugin())
     <a v-if="modelInfo && modelInfo.source" target="_blank" :href="modelInfo.source">source RDF file</a>
     <br>
     <br>
-    <p style="margin-bottom: 0px;">Click to download by consumer:</p>
+    <p style="margin-bottom: 0px;">Click to download by software:</p>
     <template v-for="weight in spec.config.weights_consumers" :key="weight">
         <div v-if="weight.consumers" class="chip" v-for="consumer in weight.consumers" @click="download(weight.format)" >
           <img :src="consumer.icon" alt="consumer.name" class="avatar avatar-sm">
