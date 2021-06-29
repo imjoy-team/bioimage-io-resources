@@ -4,7 +4,7 @@
   "type": "window",
   "tags": [],
   "ui": "",
-  "version": "0.2.5",
+  "version": "0.2.6",
   "api_version": "0.1.7",
   "description": "Exporting BioImage.IO model packages from the model description file",
   "icon": "https://raw.githubusercontent.com/imjoy-team/bioimage-io-models/master/asset/download-icon.png",
@@ -229,6 +229,7 @@ const app = new Vue({
   },
   methods: {
     async init(weight_formats_spec){
+        debugger
       const rdfFile = this.modelInfo.config&&this.modelInfo.config._rdf_file;
       let specUrl = rdfFile || this.modelInfo.source
       const tmp = specUrl.split('/')
@@ -306,30 +307,33 @@ api.export(new ImJoyPlugin())
     <a v-if="modelInfo && modelInfo.source" target="_blank" :href="modelInfo.source">source RDF file</a>
     <br>
     <br>
-    <p style="margin-bottom: 0px;">Click to download by software:</p>
-    <template v-for="weight in spec.config.weights_consumers" :key="weight">
-        <div v-if="weight.consumers" class="chip" v-for="consumer in weight.consumers" @click="download(weight.format)" >
-          <img :src="consumer.icon" alt="consumer.name" class="avatar avatar-sm">
-          {{consumer.name}}
+    <div v-if="spec">
+        <p style="margin-bottom: 0px;">Click to download by software:</p>
+        <template v-for="weight in spec.config.weights_consumers" :key="weight">
+            <div v-if="weight.consumers" class="chip" v-for="consumer in weight.consumers" @click="download(weight.format)" >
+              <img :src="consumer.icon" alt="consumer.name" class="avatar avatar-sm">
+              {{consumer.name}}
+            </div>
+        </template>
+        <br>
+        <br>
+        <div class="dropdown" v-if="spec && spec.config.weights_consumers">
+          <a href="#" class="btn btn-link dropdown-toggle" tabindex="0">
+             Download by weight format<i class="icon icon-caret"></i>
+          </a>
+          <!-- menu component -->
+          <ul class="menu">
+              <li class="menu-item" v-for="w in spec.config.weights_consumers" :key="w.name" @click="download(format)"><a href="#dropdowns">{{w.name}}</a></li>
+          </ul>
         </div>
-    </template>
-    <br>
-    <br>
-    <div class="dropdown" v-if="spec && spec.config.weights_consumers">
-      <a href="#" class="btn btn-link dropdown-toggle" tabindex="0">
-         Download by weight format<i class="icon icon-caret"></i>
-      </a>
-      <!-- menu component -->
-      <ul class="menu">
-          <li class="menu-item" v-for="w in spec.config.weights_consumers" :key="w.name" @click="download(format)"><a href="#dropdowns">{{w.name}}</a></li>
-      </ul>
+
+        <p v-else-if="!spec">No model selected.</p>
+        <p v-else-if="!spec.weights">No model weights available.</p>
+        <div v-if="loading" class="loading loading-lg"></div>
+        <progress v-if="progress" class="progress" :value="progress" max="100"></progress>
+        <div class="d-block">{{status}}</div>
+        <br>
     </div>
-   
-    <p v-else-if="!spec">No model selected.</p>
-    <p v-else-if="!spec.weights">No model weights available.</p>
-    <div v-if="loading" class="loading loading-lg"></div>
-    <progress v-if="progress" class="progress" :value="progress" max="100"></progress>
-    <div class="d-block">{{status}}</div>
   </div>
 </window>
 
