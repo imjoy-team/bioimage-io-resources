@@ -330,8 +330,6 @@ api.export(new ImJoyPlugin())
     <div v-if="loading" class="loading loading-lg"></div>
     <progress v-if="progress" class="progress" :value="progress" max="100"></progress>
     <div class="d-block">{{status}}</div>
-    <br>
-    <button class="btn" v-if="format && !loading" @click="download(format)">Download</button>
   </div>
 </window>
 
