@@ -229,7 +229,6 @@ const app = new Vue({
   },
   methods: {
     async init(weight_formats_spec){
-        debugger
       const rdfFile = this.modelInfo.config&&this.modelInfo.config._rdf_file;
       let specUrl = rdfFile || this.modelInfo.source
       const tmp = specUrl.split('/')
