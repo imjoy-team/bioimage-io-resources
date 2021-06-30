@@ -136,16 +136,20 @@ async function downloadModel(rootUrl, spec, weightsFormat, showMessage, showProg
     }
   }
   // deprecate this after v0.4.0
-  if(spec.source && spec.source.startsWith('./')){
+  // TODO: Fix the leading ./ in the python library
+  if(spec.source){ // && spec.source.startsWith('./')
     const src = spec.source.split(':')[0] // e.g. ./mynetwork:UNet
     files.push(src)
-    exportSpec.source = getFileName(src)
+    // exportSpec.source = getFileName(src)
+    // HACK: leave field in exportSpec unchanged, bioimageio.spec currently only
+    // loads it like this
+    exportSpec.source = spec.source
   }
   // deprecate this after v0.4.0
   if(spec.dependencies && spec.dependencies.startsWith('./')){
     const dep = spec.dependencies.split(':')[1] // e.g. pip:./requirements.txt
     files.push(dep) 
-    exportSpec.dependencies = getFileName(dep)
+    exportSpec.dependencies = spec.dependencies
   }
   // after 0.4.0, rename source to architecture
   if(spec.weights[weightsFormat]){
@@ -153,12 +157,12 @@ async function downloadModel(rootUrl, spec, weightsFormat, showMessage, showProg
     if(wformat.architecture && wformat.architecture.startsWith('./')){
       const src = wformat.architecture.split(':')[0] // e.g. ./mynetwork:UNet
       files.push(src)
-      exportSpec.weights[weightsFormat].architecture = getFileName(src)
+      exportSpec.weights[weightsFormat].architecture = wformat.architecture
     }
     if(wformat.dependencies && wformat.dependencies.startsWith('./')){
       const dep = wformat.dependencies.split(':')[1] // e.g. pip:./requirements.txt
       files.push(dep) 
-      exportSpec.weights[weightsFormat].dependencies = getFileName(dep)
+      exportSpec.weights[weightsFormat].dependencies = wformat.dependencies
     }
   }
   if(spec.documentation && spec.documentation.startsWith('./')){
