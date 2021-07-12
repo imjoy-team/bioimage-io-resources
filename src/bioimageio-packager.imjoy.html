@@ -4,7 +4,7 @@
   "type": "window",
   "tags": [],
   "ui": "",
-  "version": "0.2.6",
+  "version": "0.2.7",
   "api_version": "0.1.7",
   "description": "Exporting BioImage.IO model packages from the model description file",
   "icon": "https://raw.githubusercontent.com/imjoy-team/bioimage-io-models/master/asset/download-icon.png",
@@ -107,11 +107,24 @@ function getFileName(url){
   return './' + url.split('/').pop().split('#')[0].split('?')[0]
 }
 
+async function fileExists(rootUrl, url){
+    const u = await resolveUrl(rootUrl, url)
+    const response = await fetch(u, {method: 'HEAD'})
+    return response.ok
+}
 
-async function downloadModel(rootUrl, spec, weightsFormat, showMessage, showProgress){
+async function downloadModel(rootUrl, spec, weightsFormat, showMessage, showProgress, showWarning){
   const zip = new JSZip()
-  const exportSpec = JSON.parse(JSON.stringify(spec));
-
+  const exportSpec = JSON.parse(JSON.stringify(spec, function (key, value) {
+        if (value === Infinity) {
+            return 'inf';
+        }
+        if (value === -Infinity) {
+            return '-inf';
+        }
+        return value;
+    })
+  );
   await showMessage('Downloading files...')
   let files = []
   const weightsURL = spec.weights[weightsFormat].source
@@ -137,7 +150,7 @@ async function downloadModel(rootUrl, spec, weightsFormat, showMessage, showProg
   }
   // deprecate this after v0.4.0
   // TODO: Fix the leading ./ in the python library
-  if(spec.source){ // && spec.source.startsWith('./')
+  if(spec.source && spec.source.includes(':')){
     const src = spec.source.split(':')[0] // e.g. ./mynetwork:UNet
     files.push(src)
     // exportSpec.source = getFileName(src)
@@ -146,22 +159,22 @@ async function downloadModel(rootUrl, spec, weightsFormat, showMessage, showProg
     exportSpec.source = spec.source
   }
   // deprecate this after v0.4.0
-  if(spec.dependencies && spec.dependencies.startsWith('./')){
+  if(spec.dependencies && spec.dependencies.includes(':')){
     const dep = spec.dependencies.split(':')[1] // e.g. pip:./requirements.txt
-    files.push(dep) 
+    files.push(dep)
     exportSpec.dependencies = spec.dependencies
   }
   // after 0.4.0, rename source to architecture
   if(spec.weights[weightsFormat]){
     const wformat = spec.weights[weightsFormat];
-    if(wformat.architecture && wformat.architecture.startsWith('./')){
+    if(wformat.architecture && wformat.architecture.includes(':')){
       const src = wformat.architecture.split(':')[0] // e.g. ./mynetwork:UNet
       files.push(src)
       exportSpec.weights[weightsFormat].architecture = wformat.architecture
     }
-    if(wformat.dependencies && wformat.dependencies.startsWith('./')){
+    if(wformat.dependencies && wformat.dependencies.includes(':')){
       const dep = wformat.dependencies.split(':')[1] // e.g. pip:./requirements.txt
-      files.push(dep) 
+      files.push(dep)
       exportSpec.weights[weightsFormat].dependencies = wformat.dependencies
     }
   }
@@ -171,15 +184,25 @@ async function downloadModel(rootUrl, spec, weightsFormat, showMessage, showProg
   }
 
   if(spec.test_inputs && Array.isArray(spec.test_inputs)){
-    files = files.concat(spec.test_inputs)
     for(let i=0;i<spec.test_inputs.length;i++){
-      exportSpec.test_inputs[i] = getFileName(spec.test_inputs[i])
+      if(await fileExists(rootUrl, spec.test_inputs[i])){
+          files.push(spec.test_inputs[i])
+          exportSpec.test_inputs[i] = getFileName(spec.test_inputs[i])
+      }
+      else{
+          showWarning("File not found: " + spec.test_inputs[i])
+      }
     }
   }
   if(spec.test_outputs && Array.isArray(spec.test_outputs)){
-    files = files.concat(spec.test_outputs)
     for(let i=0;i<spec.test_outputs.length;i++){
-      exportSpec.test_outputs[i] = getFileName(spec.test_outputs[i])
+      if(await fileExists(rootUrl, spec.test_outputs[i])){
+          files.push(spec.test_outputs[i])
+          exportSpec.test_outputs[i] = getFileName(spec.test_outputs[i])
+      }
+      else{
+          showWarning("File not found: " + spec.test_outputs[i])
+      }
     }
   }
   if(spec.covers && Array.isArray(spec.covers)){
@@ -193,9 +216,13 @@ async function downloadModel(rootUrl, spec, weightsFormat, showMessage, showProg
   for(let url of files){
     url = await resolveUrl(rootUrl, url)
     await showMessage(`Downloading ${url}`)
-    const file = await fetchFile(url, showMessage, showProgress)
-    zip.file(file.name, file)
-    await showMessage(`file downloaded: ${file.name}`)
+    try{
+        const file = await fetchFile(url, showMessage, showProgress)
+        zip.file(file.name, file)
+        await showMessage(`file downloaded: ${file.name}`)
+    } catch(e){
+        showWarning("Failed to download: " + url);
+    }
   }
 
   // clear other weights format
@@ -230,6 +257,7 @@ const app = new Vue({
     progress: 0,
     spec: null,
     rootUrl: null,
+    warnings: [],
   },
   methods: {
     async init(weight_formats_spec){
@@ -250,10 +278,10 @@ const app = new Vue({
           else
             return {"format": k, "name": k, "consumers": null}
       })
-      
     },
     async download(format){
       this.format = format
+      this.warnings = []
       try{
         this.loading = true;
         if(this.format === 'default')
@@ -266,6 +294,9 @@ const app = new Vue({
             if(p<1) p = parseInt(p*100)
             this.progress = p
             this.$forceUpdate()
+          },(warning)=>{
+            this.warnings.push(warning)
+            this.$forceUpdate();
           })
       }
       finally{
@@ -308,7 +339,12 @@ api.export(new ImJoyPlugin())
     <h2 v-if="modelInfo">{{modelInfo.name}}</h2>
     
     <a v-if="modelInfo && modelInfo.source" target="_blank" :href="modelInfo.source">source RDF file</a>
-    <br>
+    <br v-else-if="spec">
+    <p v-else-if="!spec">No model selected.</p>
+    <p v-else-if="!spec.weights">No model weights available.</p>
+    <div v-if="loading" class="loading loading-lg"></div>
+    <progress v-if="progress" class="progress" :value="progress" max="100"></progress>
+    <div class="d-block">{{status}}</div>
     <br>
     <div v-if="spec">
         <p style="margin-bottom: 0px;">Click to download by software:</p>
@@ -329,12 +365,6 @@ api.export(new ImJoyPlugin())
               <li class="menu-item" v-for="w in spec.config.weights_consumers" :key="w.name" @click="download(format)"><a href="#dropdowns">{{w.name}}</a></li>
           </ul>
         </div>
-
-        <p v-else-if="!spec">No model selected.</p>
-        <p v-else-if="!spec.weights">No model weights available.</p>
-        <div v-if="loading" class="loading loading-lg"></div>
-        <progress v-if="progress" class="progress" :value="progress" max="100"></progress>
-        <div class="d-block">{{status}}</div>
         <br>
     </div>
   </div>
