@@ -362,7 +362,7 @@ api.export(new ImJoyPlugin())
           </a>
           <!-- menu component -->
           <ul class="menu">
-              <li class="menu-item" v-for="w in spec.config.weights_consumers" :key="w.name" @click="download(format)"><a href="#dropdowns">{{w.name}}</a></li>
+              <li class="menu-item" v-for="w in spec.config.weights_consumers" :key="w.name" @click="download(w.format)"><a href="#dropdowns">{{w.name}}</a></li>
           </ul>
         </div>
         <br>
