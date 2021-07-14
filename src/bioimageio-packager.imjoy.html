@@ -238,7 +238,7 @@ async function downloadModel(rootUrl, spec, weightsFormat, showMessage, showProg
   // do it in a callback so we see the above message
   setTimeout(async ()=>{
     console.time("uzip compression")
-    const zipBlob = new Blob([UZIP.encode(files2zip)]);
+    const zipBlob = new Blob([UZIP.encode(files2zip, true)]);
     console.timeEnd('uzip compression')
     await api.exportFile(zipBlob, spec.name.replace(/\s+/g, '-').toLowerCase() + '.zip')
     await showMessage('Model package was exported successfully')
