@@ -348,7 +348,7 @@ api.export(new ImJoyPlugin())
     <p v-else-if="!spec">No model selected.</p>
     <p v-else-if="!spec.weights">No model weights available.</p>
     <div v-if="loading" class="loading loading-lg"></div>
-    <progress v-if="progress" class="progress" :value="progress" max="100"></progress>
+    <progress v-if="progress" id="progressbar" class="progress" :value="progress" max="100"></progress>
     <div class="d-block">{{status}}</div>
     <br>
     <div v-if="spec">
@@ -374,6 +374,11 @@ api.export(new ImJoyPlugin())
 </window>
 
 <style lang="css">
+#progressbar {
+  position: absolute;
+  bottom: 1px;
+  left: 0px;  
+}
 .form-group {
   margin: 20px;
 }
