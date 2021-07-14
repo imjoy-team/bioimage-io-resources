@@ -4,7 +4,7 @@
   "type": "window",
   "tags": [],
   "ui": "",
-  "version": "0.3.0",
+  "version": "0.3.1",
   "api_version": "0.1.7",
   "description": "Exporting BioImage.IO model packages from the model description file",
   "icon": "https://raw.githubusercontent.com/imjoy-team/bioimage-io-models/master/asset/download-icon.png",
@@ -73,15 +73,6 @@ async function convertZenodoFileUrl(url) {
     return file.key === fn;
   })[0];
   return fileObj.links.self;
-}
-
-function str2ab(str) {
-  var buf = new ArrayBuffer(str.length * 2); // 2 bytes for each char
-  var bufView = new Uint16Array(buf);
-  for (var i = 0, strLen = str.length; i < strLen; i++) {
-    bufView[i] = str.charCodeAt(i);
-  }
-  return new Uint8Array(buf);
 }
 
 async function fetchFile(url, showMessage, showProgress){
@@ -230,7 +221,7 @@ async function downloadModel(rootUrl, spec, weightsFormat, showMessage, showProg
   const newWeights = {}
   newWeights[weightsFormat] = exportSpec.weights[weightsFormat]
   exportSpec.weights = newWeights
-  files2zip["rdf.yaml"] = str2ab(jsyaml.dump(exportSpec))
+  files2zip["rdf.yaml"] = new TextEncoder("utf-8").encode(jsyaml.dump(exportSpec))
   files2zip["model.yaml"] = files2zip["rdf.yaml"]
   
 
