@@ -237,7 +237,7 @@ async function downloadModel(rootUrl, spec, weightsFormat, showMessage, showProg
   await showMessage('Making zip package, this may take a while...')
   // do it in a callback so we see the above message
   setTimeout(async ()=>{
-    onsole.time("uzip compression")
+    console.time("uzip compression")
     const zipBlob = new Blob([UZIP.encode(files2zip)]);
     console.timeEnd('uzip compression')
     await api.exportFile(zipBlob, spec.name.replace(/\s+/g, '-').toLowerCase() + '.zip')
