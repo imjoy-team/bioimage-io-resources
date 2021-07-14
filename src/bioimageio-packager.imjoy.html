@@ -352,6 +352,9 @@ api.export(new ImJoyPlugin())
     <div class="d-block">{{status}}</div>
     <br>
     <div v-if="spec">
+        <ul>
+          <li style="color: orange;" v-for="warning in warnings">{{warning}}</li>
+        </ul>
         <p style="margin-bottom: 0px;" v-if="supportedConsumers.length>0">Click to download by software:</p>
         <div class="chip" v-for="consumer in supportedConsumers" :key="consumer.name" :title="consumer.format"  @click="download(consumer.format)" >
           <img :src="consumer.icon" alt="consumer.name" class="avatar avatar-sm">
