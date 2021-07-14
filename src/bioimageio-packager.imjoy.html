@@ -232,12 +232,18 @@ async function downloadModel(rootUrl, spec, weightsFormat, showMessage, showProg
   exportSpec.weights = newWeights
   files2zip["rdf.yaml"] = str2ab(jsyaml.dump(exportSpec))
   files2zip["model.yaml"] = files2zip["rdf.yaml"]
+  
+
   await showMessage('Making zip package, this may take a while...')
-  console.time("uzip compression")
-  const zipBlob = new Blob([UZIP.encode(files2zip)]);
-  console.timeEnd('uzip compression')
-  await api.exportFile(zipBlob, spec.name.replace(/\s+/g, '-').toLowerCase() + '.zip')
-  await showMessage('Model package was exported successfully')
+  // do it in a callback so we see the above message
+  setTimeout(()=>{
+    onsole.time("uzip compression")
+    const zipBlob = new Blob([UZIP.encode(files2zip)]);
+    console.timeEnd('uzip compression')
+    await api.exportFile(zipBlob, spec.name.replace(/\s+/g, '-').toLowerCase() + '.zip')
+    await showMessage('Model package was exported successfully')
+  },0)
+
 }
 
 const app = new Vue({
