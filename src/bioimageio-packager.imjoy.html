@@ -224,11 +224,11 @@ async function downloadModel(rootUrl, spec, weightsFormat, showMessage, showProg
 
   zip.file("model.yaml", jsyaml.dump(exportSpec));
   await showMessage('Making zip package...')
-  const zipBlob = await zip.generateAsync({ type:"blob",
-    compression: "DEFLATE",
-    compressionOptions: {
-        level: 1
-    }},
+  const zipBlob = await zip.generateAsync({
+    type:"blob",
+    compression: "STORE",
+    compressionOptions: null
+   },
     (mdata)=>{
       showProgress(mdata.percent)
     }
