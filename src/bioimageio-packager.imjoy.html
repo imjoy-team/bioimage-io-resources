@@ -252,7 +252,8 @@ const app = new Vue({
     spec: null,
     rootUrl: null,
     warnings: [],
-    supportedConsumers: []
+    supportedConsumers: [],
+    weightsConsumers: [],
   },
   methods: {
     async init(weightsFormatsSpec){
@@ -265,9 +266,8 @@ const app = new Vue({
       this.spec = jsyaml.load(await response.text())
    
       this.modelInfo.name = this.spec.name
-      this.spec.config = this.spec.config || {}
       const wfs = Object.keys(this.spec.weights)
-      this.spec.config.weights_consumers = wfs.map((k)=>{
+      this.weightsConsumers = wfs.map((k)=>{
           const wformat = weightsFormatsSpec.weight_formats[k]
           if(wformat)
             return {"format": k, "name": wformat.name, "consumers": wformat.consumers.map((k)=>weightsFormatsSpec.consumers[k])}
@@ -365,13 +365,13 @@ api.export(new ImJoyPlugin())
         </div>
         <br>
         <br>
-        <div class="dropdown" v-if="spec && spec.config.weights_consumers">
+        <div class="dropdown" v-if="spec && weightsConsumers">
           <a href="#" class="btn btn-link dropdown-toggle" tabindex="0">
              Download by weight format<i class="icon icon-caret"></i>
           </a>
           <!-- menu component -->
           <ul class="menu">
-              <li class="menu-item" v-for="w in spec.config.weights_consumers" :key="w.name" @click="download(w.format)"><a href="#dropdowns">{{w.name}}</a></li>
+              <li class="menu-item" v-for="w in weightsConsumers" :key="w.name" @click="download(w.format)"><a href="#dropdowns">{{w.name}}</a></li>
           </ul>
         </div>
         <br>
