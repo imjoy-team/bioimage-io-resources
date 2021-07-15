@@ -26,7 +26,8 @@ class ImJoyPlugin {
     }
 
     async run(ctx) {
-        await api.createWindow({src: "https://oeway.github.io/vizarr/?source="+ctx.data.source, name: ctx.data.source.split('?')[0].split("/").pop().slice(0, 40), passive: true})
+        const name = ctx.data.source?ctx.data.source.split('?')[0].split("/").pop().slice(0, 40):"Vizarr";
+        await api.createWindow({src: "https://oeway.github.io/vizarr/?source="+ctx.data.source, name, passive: true})
     }
 }
 
