@@ -23,7 +23,7 @@ config:
 application:
   - id: BioImageIO-Packager
     source: https://raw.githubusercontent.com/imjoy-team/bioimage-io-models/master/src/bioimageio-packager.imjoy.html
-  - id: Notebook Preview
+  - id: NotebookPreview
     source: https://raw.githubusercontent.com/bioimage-io/nbpreview/master/notebook-preview.imjoy.html
   - id: ImJoy
     source: https://raw.githubusercontent.com/imjoy-team/bioimage-io-models/master/src/imjoy-app.imjoy.html
