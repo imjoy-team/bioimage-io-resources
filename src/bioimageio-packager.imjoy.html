@@ -4,7 +4,7 @@
   "type": "window",
   "tags": [],
   "ui": "",
-  "version": "0.3.1",
+  "version": "0.3.2",
   "api_version": "0.1.7",
   "description": "Exporting BioImage.IO model packages from the model description file",
   "icon": "https://raw.githubusercontent.com/imjoy-team/bioimage-io-models/master/asset/download-icon.png",
@@ -35,25 +35,6 @@ function isZenodoFileUrl(url){
   }
   return true
 }
-
-async function convertZenodoFileUrl(url) {
-  const myRegexp = /https?:\/\/zenodo.org\/record\/([a-zA-Z0-9-]+)\/files\/(.*)/g;
-  const match = myRegexp.exec(url);
-  if (!match || match.length !== 3) {
-    throw new Error("Invalid zenodo url");
-  }
-  const [fullUrl, depositId, fileName] = match;
-  const blob = await fetch(
-    `https://zenodo.org/api/records/${depositId}`
-  ).then(r => r.blob());
-  const data = JSON.parse(await new Response(blob).text());
-  const fn = fileName.split("?")[0];
-  const fileObj = data.files.filter(file => {
-    return file.key === fn;
-  })[0];
-  return fileObj && fileObj.links.self;
-}
-
   
 async function convertZenodoFileUrl(url) {
   const myRegexp = /zenodo.org\/record\/([a-zA-Z0-9-]+)\/files\/(.*)/g;
@@ -257,8 +238,7 @@ const app = new Vue({
   },
   methods: {
     async init(weightsFormatsSpec){
-      const rdfFile = this.modelInfo.config&&this.modelInfo.config._rdf_file;
-      let specUrl = rdfFile || this.modelInfo.source
+      let specUrl = this.modelInfo.source
       const tmp = specUrl.split('/')
       this.rootUrl = tmp.slice(0, tmp.length-1).join('/')
       specUrl = await convertZenodoFileUrl(specUrl) || specUrl
@@ -323,12 +303,12 @@ class ImJoyPlugin {
   }
 
   async run(ctx) {
-    if(!ctx.data || (!ctx.data.config && !ctx.data.source)){
+    if(!ctx.data || !ctx.data.source){
       const specUrl = await api.prompt("Please paste the model spec url here", "https://raw.githubusercontent.com/deepimagej/models/master/defcon_density_map_estimation/model.yaml")
       if(!specUrl) return
       app.modelInfo = {
         name: getFileName(specUrl),
-        config: { _rdf_file: specUrl }
+        source: specUrl
       }
     }
     else
