@@ -1,4 +1,9 @@
-format_version: 0.2.0
+format_version: 0.2.2
+type: collection
+name: ImJoy Collection
+tags: [imjoy, bioimage.io]
+description: "Resources for BioImgage.IO curated by the ImJoy Team."
+documentation: https://imjoy.io/docs
 config:
   id: imjoy
   name: ImJoy
@@ -20,25 +25,30 @@ config:
   default_type: application
   url_root: https://raw.githubusercontent.com/imjoy-team/bioimage-io-models/master
 
-application:
+collection:
   - id: BioImageIO-Packager
+    type: application
     source: https://raw.githubusercontent.com/imjoy-team/bioimage-io-models/master/src/bioimageio-packager.imjoy.html
-  - id: Notebook Preview
-    source: https://raw.githubusercontent.com/bioimage-io/nbpreview/master/notebook-preview.imjoy.html
+#   - id: Notebook Preview
+#     type: application
+#     source: https://raw.githubusercontent.com/bioimage-io/nbpreview/master/notebook-preview.imjoy.html
   - id: ImJoy
+    type: application
     source: https://raw.githubusercontent.com/imjoy-team/bioimage-io-models/master/src/imjoy-app.imjoy.html
   - id: ImageJ.JS
+    type: application
     source: https://raw.githubusercontent.com/imjoy-team/bioimage-io-models/master/src/imagej-js.imjoy.html
-  - id: ImJoyFiddle
-    source: https://raw.githubusercontent.com/imjoy-team/bioimage-io-models/master/src/imjoy-fiddle.imjoy.html
-  - id: vizarr
-    source: https://raw.githubusercontent.com/imjoy-team/bioimage-io-models/master/src/vizarr.imjoy.html
-  - id: CellPose
-    source: https://raw.githubusercontent.com/imjoy-team/bioimage-io-models/master/src/cellpose.imjoy.html
-
-
-dataset:
+#   - id: ImJoyFiddle
+#     type: application
+#     source: https://raw.githubusercontent.com/imjoy-team/bioimage-io-models/master/src/imjoy-fiddle.imjoy.html
+#   - id: vizarr
+#     type: application
+#     source: https://raw.githubusercontent.com/imjoy-team/bioimage-io-models/master/src/vizarr.imjoy.html
+#   - id: CellPose
+#     type: application
+#     source: https://raw.githubusercontent.com/imjoy-team/bioimage-io-models/master/src/cellpose.imjoy.html
   - id: LuCa-7color
+    type: dataset
     name: LuCa-7color
     description: Sample PerkinElmer Vectra QPTIFF files (c) PerkinElmer (http://www.perkinelmer.com)
     authors: ["Perkin Elmer"]
