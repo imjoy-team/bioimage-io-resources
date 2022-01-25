@@ -41,9 +41,9 @@ collection:
 #   - id: ImJoyFiddle
 #     type: application
 #     source: https://raw.githubusercontent.com/imjoy-team/bioimage-io-models/master/src/imjoy-fiddle.imjoy.html
-#   - id: vizarr
-#     type: application
-#     source: https://raw.githubusercontent.com/imjoy-team/bioimage-io-models/master/src/vizarr.imjoy.html
+  - id: vizarr
+    type: application
+    source: https://raw.githubusercontent.com/imjoy-team/bioimage-io-models/master/src/vizarr.imjoy.html
 #   - id: CellPose
 #     type: application
 #     source: https://raw.githubusercontent.com/imjoy-team/bioimage-io-models/master/src/cellpose.imjoy.html
