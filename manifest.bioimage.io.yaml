@@ -27,12 +27,14 @@ config:
 
 collection:
   - id: BioImageIO-Packager
+    name: BioImageIO-Packager
     type: application
     source: https://raw.githubusercontent.com/imjoy-team/bioimage-io-models/master/src/bioimageio-packager.imjoy.html
 #   - id: Notebook Preview
 #     type: application
 #     source: https://raw.githubusercontent.com/bioimage-io/nbpreview/master/notebook-preview.imjoy.html
   - id: ImJoy
+    name: ImJoy
     type: application
     source: https://raw.githubusercontent.com/imjoy-team/bioimage-io-models/master/src/imjoy-app.imjoy.html
   - id: ImageJ.JS
@@ -42,6 +44,7 @@ collection:
 #     type: application
 #     source: https://raw.githubusercontent.com/imjoy-team/bioimage-io-models/master/src/imjoy-fiddle.imjoy.html
   - id: vizarr
+    name: vizarr
     type: application
     source: https://raw.githubusercontent.com/imjoy-team/bioimage-io-models/master/src/vizarr.imjoy.html
 #   - id: CellPose
