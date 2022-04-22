@@ -59,7 +59,7 @@ class ImJoyPlugin {
                   "label": "Select Image", 
                   "callback": ()=>{
                       return new Promise(async (resolve, reject)=>{
-                        const selection_plugin = "https://raw.githubusercontent.com/imjoy-team/example-plugins/master/imjoy-plugins/HPA-Image-Selection.imjoy.html";
+                        const selection_plugin = "https://raw.githubusercontent.com/imjoy-team/bioimage-io-models/master/src/hpa-image-selection.imjoy.html";
                         const w = await api.showDialog({
                             src: selection_plugin,
                             title: 'Select an image from HPA',
