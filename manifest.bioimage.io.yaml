@@ -47,7 +47,7 @@ collection:
     name: vizarr
     type: application
     source: https://raw.githubusercontent.com/imjoy-team/bioimage-io-models/master/src/vizarr.imjoy.html
-  - id: hpa-single-cell
+  - id: HPA-Single-Cell
     name: HPA Single Cell
     source: https://raw.githubusercontent.com/imjoy-team/bioimage-io-models/master/src/hpa-single-cell-bioengine.imjoy.html
 #   - id: CellPose
