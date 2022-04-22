@@ -1,19 +1,19 @@
 <config lang="json">
 {
-  "name": "HPA-Single-Cell",
-  "type": "web-worker",
-  "tags": [],
-  "version": "0.1.1",
-  "cover": "",
-  "description": "Run the HPA single cell classification model via the the BioEngine",
-  "icon": "https://raw.githubusercontent.com/ilastik/bioimage-io-models/07147313b07f6842f0b9890ee7a79e47c44258e5/image/circular-play-button.png",
-  "inputs": null,
-  "outputs": null,
-  "api_version": "0.1.8",
-  "env": "",
-  "permissions": [],
-  "requirements": [],
-  "dependencies": []
+    "name": "HPA-Single-Cell",
+    "type": "web-worker",
+    "tags": [],
+    "version": "0.1.1",
+    "cover": "",
+    "description": "Run the HPA single cell classification model via the the BioEngine",
+    "icon": "https://raw.githubusercontent.com/ilastik/bioimage-io-models/07147313b07f6842f0b9890ee7a79e47c44258e5/image/circular-play-button.png",
+    "inputs": null,
+    "outputs": null,
+    "api_version": "0.1.8",
+    "env": "",
+    "permissions": [],
+    "requirements": [],
+    "dependencies": []
 }
 </config>
 
@@ -29,9 +29,9 @@ function readFile(file) {
 
 class ImJoyPlugin {
     async setup() {
-      await api.showMessage("Initializing the inference plugin, this may take a while...")
-      const plugin_source = await api.getAttachment("inference-plugin")
-      this.inferencePlugin = await api.loadPlugin({src: plugin_source})
+        await api.showMessage("Initializing the inference plugin, this may take a while...")
+        const plugin_source = await api.getAttachment("inference-plugin")
+        this.inferencePlugin = await api.loadPlugin({src: plugin_source})
         const self = this;
         const viewer = await api.createWindow({src: "https://kaibu.org/#/app", name: "HPA Single-cell Classification", fullscreen: true})
         await viewer.add_widget({
@@ -55,10 +55,10 @@ class ImJoyPlugin {
                 //     ]
                 // },
                 {
-                  "type": "button",
-                  "label": "Select Image", 
-                  "callback": ()=>{
-                      return new Promise(async (resolve, reject)=>{
+                    "type": "button",
+                    "label": "Select Image", 
+                    "callback": ()=>{
+                        return new Promise(async (resolve, reject)=>{
                         const selection_plugin = "https://raw.githubusercontent.com/imjoy-team/bioimage-io-models/master/src/hpa-image-selection.imjoy.html";
                         const w = await api.showDialog({
                             src: selection_plugin,
@@ -73,7 +73,7 @@ class ImJoyPlugin {
                                 }
                             }
                         })
-                      })
+                        })
                     }
 
                 }
@@ -115,22 +115,22 @@ api.export(new ImJoyPlugin())
 <attachment name="inference-plugin">
 <config lang="json">
 {
-  "name": "hpa-inference-plugin",
-  "type": "web-python",
-  "version": "0.1.0",
-  "description": "[TODO: describe this plugin with one sentence.]",
-  "tags": [],
-  "ui": "",
-  "cover": "",
-  "inputs": null,
-  "outputs": null,
-  "flags": [],
-  "icon": "extension",
-  "api_version": "0.1.8",
-  "env": "",
-  "permissions": [],
-  "requirements": ["imjoy_rpc", "kaibu_utils", "numpy", "scipy", "scikit-image"],
-  "dependencies": []
+    "name": "hpa-inference-plugin",
+    "type": "web-python",
+    "version": "0.1.0",
+    "description": "[TODO: describe this plugin with one sentence.]",
+    "tags": [],
+    "ui": "",
+    "cover": "",
+    "inputs": null,
+    "outputs": null,
+    "flags": [],
+    "icon": "extension",
+    "api_version": "0.1.8",
+    "env": "",
+    "permissions": [],
+    "requirements": ["imjoy_rpc", "kaibu_utils", "numpy", "scipy", "scikit-image"],
+    "dependencies": []
 }
 </config>
 
@@ -168,25 +168,25 @@ LOW_THRESHOLD = HIGH_THRESHOLD - 0.25
 
 
 LABELS = {
-  0: 'Nucleoplasm',
-  1: 'Nuclear membrane',
-  2: 'Nucleoli',
-  3: 'Nucleoli fibrillar center',
-  4: 'Nuclear speckles',
-  5: 'Nuclear bodies',
-  6: 'Endoplasmic reticulum',
-  7: 'Golgi apparatus',
-  8: 'Intermediate filaments',
-  9: 'Actin filaments',
-  10: 'Microtubules',
-  11: 'Mitotic spindle',
-  12: 'Centrosome',
-  13: 'Plasma membrane',
-  14: 'Mitochondria',
-  15: 'Aggresome',
-  16: 'Cytosol',
-  17: 'Vesicles and punctate cytosolic patterns',
-  18: 'Negative',
+    0: 'Nucleoplasm',
+    1: 'Nuclear membrane',
+    2: 'Nucleoli',
+    3: 'Nucleoli fibrillar center',
+    4: 'Nuclear speckles',
+    5: 'Nuclear bodies',
+    6: 'Endoplasmic reticulum',
+    7: 'Golgi apparatus',
+    8: 'Intermediate filaments',
+    9: 'Actin filaments',
+    10: 'Microtubules',
+    11: 'Mitotic spindle',
+    12: 'Centrosome',
+    13: 'Plasma membrane',
+    14: 'Mitochondria',
+    15: 'Aggresome',
+    16: 'Cytosol',
+    17: 'Vesicles and punctate cytosolic patterns',
+    18: 'Negative',
 }
 
 COLORS =  ["red", "green", "blue", "yellow"]
@@ -377,11 +377,14 @@ async def segment(model_runner, model, imgs, scale_factor=0.25):
     imgs = preprocess(imgs, scale_factor=0.25)
     image = imgs[None, :, :, :].astype('float32')
     result = await model_runner.execute_model([image], model)
-    imgs = result['outputs'][0]
-    # np.save("test_output.npy", imgs)
-    imgs = transform.rescale(imgs[0].transpose([1, 2, 0]), 1.0/scale_factor, multichannel=True)
-    imgs = util.img_as_ubyte(imgs)
-    return imgs
+    if result['success']:
+        imgs = result['outputs'][0]
+        # np.save("test_output.npy", imgs)
+        imgs = transform.rescale(imgs[0].transpose([1, 2, 0]), 1.0/scale_factor, multichannel=True)
+        imgs = util.img_as_ubyte(imgs)
+        return imgs
+    else:
+        raise Exception(f"Failed to run model: {model}, error: {result['error']}")
 
 async def classify(model_runner, model, image, threshold=0.3, expected_shape=[4, 128, 128]):
     image = image.transpose(2, 0, 1)  # HxWxC to CxHxW
@@ -391,9 +394,12 @@ async def classify(model_runner, model, image, threshold=0.3, expected_shape=[4,
     image *= 255
     image = image[None, :, :, :].astype('float32')
     result = await model_runner.execute_model([image], model)
-    classes, features = result['outputs']
-    preds = [(LABELS[i], prob) for i, prob in enumerate(classes[0].tolist()) if prob>threshold]
-    return preds
+    if result['success']:
+        classes, features = result['outputs']
+        preds = [(LABELS[i], prob) for i, prob in enumerate(classes[0].tolist()) if prob>threshold]
+        return preds
+    else:
+        raise Exception(f"Failed to run model: {model}, error: {result['error']}")
 
 
 def cell_crop_augment(image, mask, paddings=(20, 20, 20, 20)):
@@ -494,7 +500,8 @@ class ImJoyPlugin():
         for mask_id, image_crop in zip(cell_indices, crop_images):
             preds = await classify(model_runner, classification_model, image_crop)
             cell_predictions[mask_id] = preds
-            print(image_id, mask_id, preds)
+            print(mask_id, preds)
+            await api.showMessage(f"Prediction for cell {mask_id}: {preds}")
 
         shapes = mask_to_features(np.flipud(cell_mask))
         names = []
@@ -508,3 +515,4 @@ class ImJoyPlugin():
 api.export(ImJoyPlugin())
 </script>
 </attachment>
+    
