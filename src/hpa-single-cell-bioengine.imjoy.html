@@ -3,7 +3,7 @@
     "name": "HPA-Single-Cell",
     "type": "web-worker",
     "tags": [],
-    "version": "0.1.1",
+    "version": "0.1.2",
     "cover": "",
     "description": "Run the HPA single cell classification model via the the BioEngine",
     "icon": "https://raw.githubusercontent.com/ilastik/bioimage-io-models/07147313b07f6842f0b9890ee7a79e47c44258e5/image/circular-play-button.png",
@@ -376,7 +376,14 @@ def run_model_torch(model, imgs, scale_factor=0.25):
 async def segment(model_runner, model, imgs, scale_factor=0.25):
     imgs = preprocess(imgs, scale_factor=0.25)
     image = imgs[None, :, :, :].astype('float32')
-    result = await model_runner.execute_model([image], model)
+    kwargs = {"inputs": [image], "model_id": model}
+    results = await model_runner.execute(
+        inputs=[kwargs],
+        model_name="bioengine-model-runner",
+        serialization="imjoy",
+    )
+    result = results["outputs"]
+    # result = await model_runner.execute_model([image], model)
     if result['success']:
         imgs = result['outputs'][0]
         # np.save("test_output.npy", imgs)
@@ -393,7 +400,18 @@ async def classify(model_runner, model, image, threshold=0.3, expected_shape=[4,
     # after resizing, the pixel range will become 0~1
     image *= 255
     image = image[None, :, :, :].astype('float32')
-    result = await model_runner.execute_model([image], model)
+    kwargs = {"inputs": [image], "model_id": model}
+    results = await model_runner.execute(
+        inputs=[kwargs],
+        model_name="bioengine-model-runner",
+        serialization="imjoy",
+    )
+    result = results["outputs"]
+    # assert result["success"] == True, result["error"]
+    # assert result["outputs"][0].shape == (1, 3, 128, 128), str(
+    #     result["outputs"][0].shape
+    # )
+    # result = await model_runner.execute_model([image], model)
     if result['success']:
         classes, features = result['outputs']
         preds = [(LABELS[i], prob) for i, prob in enumerate(classes[0].tolist()) if prob>threshold]
@@ -458,16 +476,11 @@ def encode_image(image):
     
 async def get_bioengine_runner():  
     api = await connect_to_server(
-        {"name": "test client", "server_url": "https://ai.imjoy.io/", "method_timeout": 100}
+        {"name": "test client", "server_url": "https://ai.imjoy.io/", "method_timeout": 3000}
     )
     workspace = api.config.workspace
-    # Find an imagej service
-    public_services = await api.list_services("public")
-    model_runner_service = list(filter(lambda service: service["name"] == "bioengine-model-runner", public_services))[-1]
-    model_runner = await api.get_service(model_runner_service)
-    await model_runner.load_model('10.5281/zenodo.5911832')
-    await model_runner.get_current_model()
-    return model_runner
+    triton = await api.get_service("triton-client")
+    return triton
 
 class ImJoyPlugin():
     def setup(self):
@@ -491,7 +504,7 @@ class ImJoyPlugin():
         cell_image = np.stack((image_raw[0, :, :], image_raw[3, :, :], image_raw[2, :, :]), axis=-1)
         cell_segmentations = await segment(model_runner, cell_segmentation_model, cell_image, scale_factor=0.25)
         
-        await api.showMessage("Segmenting cells...")
+        await api.showMessage("Labeling cells...")
         nuclei_mask = label_nuclei(nuc_segmentations)
         nuclei_mask, cell_mask = label_cell(nuc_segmentations, cell_segmentations)
 
