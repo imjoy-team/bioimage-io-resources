@@ -3,7 +3,7 @@
     "name": "HPA-Single-Cell",
     "type": "web-worker",
     "tags": [],
-    "version": "0.1.2",
+    "version": "0.1.3",
     "cover": "",
     "description": "Run the HPA single cell classification model via the the BioEngine",
     "icon": "https://raw.githubusercontent.com/ilastik/bioimage-io-models/07147313b07f6842f0b9890ee7a79e47c44258e5/image/circular-play-button.png",
@@ -377,12 +377,12 @@ async def segment(model_runner, model, imgs, scale_factor=0.25):
     imgs = preprocess(imgs, scale_factor=0.25)
     image = imgs[None, :, :, :].astype('float32')
     kwargs = {"inputs": [image], "model_id": model}
-    results = await model_runner.execute(
+    ret = await model_runner.execute(
         inputs=[kwargs],
         model_name="bioengine-model-runner",
         serialization="imjoy",
     )
-    result = results["outputs"]
+    result = ret["result"]
     # result = await model_runner.execute_model([image], model)
     if result['success']:
         imgs = result['outputs'][0]
@@ -401,12 +401,12 @@ async def classify(model_runner, model, image, threshold=0.3, expected_shape=[4,
     image *= 255
     image = image[None, :, :, :].astype('float32')
     kwargs = {"inputs": [image], "model_id": model}
-    results = await model_runner.execute(
+    ret = await model_runner.execute(
         inputs=[kwargs],
         model_name="bioengine-model-runner",
         serialization="imjoy",
     )
-    result = results["outputs"]
+    result = ret["result"]
     # assert result["success"] == True, result["error"]
     # assert result["outputs"][0].shape == (1, 3, 128, 128), str(
     #     result["outputs"][0].shape
