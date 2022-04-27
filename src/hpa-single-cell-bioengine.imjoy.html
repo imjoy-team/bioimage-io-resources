@@ -310,7 +310,7 @@ def label_cell(nuclei_pred, cell_pred):
     # for hpa_image, to remove the small pseduo nuclei
     nuclei_label = remove_small_objects(nuclei_label, 2500)
     nuclei_label = measure.label(nuclei_label)
-    # this is to remove the cell borders' signal from cell mask.
+    # this is to remove the cell borders signal from cell mask.
     # could use np.logical_and with some revision, to replace this func.
     # Tuned for segmentation hpa images
     threshold_value = max(0.22, filters.threshold_otsu(cell_pred[..., 2] / 255) * 0.5)
