@@ -85,6 +85,9 @@ class ImJoyPlugin():
         config = ctx.get('config', {})
         self.transform_input = config.get('transform_input', transform_input)
         self.display_output = config.get('display_output', display_output)
+        self.viewer = config.get('viewer')
+        if not self.viewer:
+            self.viewer = await api.createWindow(src="https://kaibu.org/#/app", name="GenericBioEngineApp")
         await self.show_ui(model_info)
 
     async def run_model(self, model_id, rdf, file_path):
@@ -131,16 +134,14 @@ class ImJoyPlugin():
             </p>
         </div>
         """
-            
-        viewer = await api.createWindow(src="https://kaibu.org/#/app", name=model_id)
 
         async def form_submit_callback(fields):
             file_path = fields['Select file']
             output_tensor = await self.run_model(model_id, rdf, file_path)
             output_spec = rdf['outputs'][0]
-            await self.display_output(viewer, output_spec, output_tensor)
+            await self.display_output(self.viewer, output_spec, output_tensor)
 
-        await viewer.add_widget(
+        await self.viewer.add_widget(
             {
                 "_rintf": True,
                 "name": "My Form",
