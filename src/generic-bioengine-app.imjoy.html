@@ -1,0 +1,163 @@
+<docs lang="markdown">
+[TODO: write documentation for this plugin.]
+</docs>
+
+<config lang="json">
+{
+    "name": "GenericBioEngineApp",
+    "type": "web-python",
+    "version": "0.1.0",
+    "description": "An generic BioEngine for processing images",
+    "tags": [],
+    "ui": "",
+    "cover": "",
+    "inputs": null,
+    "outputs": null,
+    "flags": [],
+    "icon": "extension",
+    "api_version": "0.1.8",
+    "env": "",
+    "permissions": [],
+    "requirements": ["imageio"],
+    "dependencies": []
+}
+</config>
+
+<script lang="python">
+from imjoy import api
+from imjoy_rpc.hypha import connect_to_server
+from js import fetch
+import numpy as np
+import io
+import imageio
+from imjoy_rpc.utils import open_elfinder
+
+async def transform_input(input_spec, input_array):
+    axes = input_spec['axes']
+    if axes == 'bcyx' and len(input_array.shape) == 2:
+        return input_array[None, None, :, :]
+    raise NotImplementedError
+
+async def display_output(viewer, output_spec, output_array):
+    axes = output_spec['axes']
+    if axes == 'bcyx':
+        output_img = output_array[0, :, :, :].transpose(1, 2, 0)
+    else:
+        raise NotImplementedError
+    await viewer.view_image(output_img)
+
+async def download_data(url):
+    response = await fetch(url)
+    bytes = await response.arrayBuffer()
+    bytes = bytes.to_py()
+    buffer = io.BytesIO(bytes)
+    return np.load(buffer)
+
+class ImJoyPlugin():
+    async def setup(self):
+        server = await connect_to_server(
+            {"name": "test client", "server_url": "https://ai.imjoy.io"}
+        )
+        self.triton = await server.get_service("triton-client")
+
+    async def bioengine_execute(self, model_id, inputs=None, return_rdf=False,):
+        kwargs = {"model_id": model_id, "inputs": inputs, "return_rdf": return_rdf}
+        ret = await self.triton.execute(
+            inputs=[kwargs],
+            model_name="bioengine-model-runner",
+            serialization="imjoy"
+        )
+        return ret["result"]
+
+    async def select_file(self):
+        fm = await api.showDialog(
+            src="https://lib.imjoy.io/elFinder"
+        )
+        ret = await fm.getSelections()
+        if not ret:
+            return
+        path = ret[0]['path']
+        return path
+
+    async def run(self, ctx):
+        ctx = ctx or {}
+        model_info = ctx.get("data", {})
+        config = ctx.get('config', {})
+        self.transform_input = config.get('transform_input', transform_input)
+        self.display_output = config.get('display_output', display_output)
+        await self.show_ui(model_info)
+
+    async def run_model(self, model_id, rdf, file_path):
+        await api.showMessage("Loading data...")
+        file = open_elfinder(file_path, 'rb')
+        img = imageio.imread(file)
+        img = await transform_input(rdf['inputs'][0], img)
+        # input_data = await download_data(rdf['test_inputs'][0])
+        await api.showMessage("Data loaded, running model...")
+        result = await self.bioengine_execute(inputs=[img], model_id=model_id)
+        if not result["success"]:
+            await api.alert(f'Failed to run the model, error: {result["error"]}')
+            raise Exception(result["error"])
+        output = result['outputs'][0]
+        await api.showMessage("🎉Model execution completed!")
+        return output
+
+    async def show_ui(self, model_info):
+        # "10.5281/zenodo.5764892"
+        # not working: "10.5281/zenodo.6200635"
+        model_id = model_info.get('id', "10.5281/zenodo.5764892")
+        try:
+            result = await self.bioengine_execute(model_id=model_id, return_rdf=True)
+            rdf = result["rdf"]
+        except Exception as exp:
+            await api.alert(f"Failed to find model ({model_id}) in the BioEngine, error: {exp}")
+            return
+        input_info = f"shape: {str(rdf['inputs'][0]['shape'])}, axes: {str(rdf['inputs'][0]['axes'])}"
+        if "sample_inputs" in rdf:
+            sample_input_url = rdf['sample_inputs'][0]
+            input_info = f"<a href='{sample_input_url}' target='_blank'>sample input image</a> <br>" + input_info
+        
+        info = f"""
+        <div class='box'>
+            <article class='media'>
+            <div class='media-content'>
+            <div class='content'>
+            <p>
+                <strong class='has-text-info'>{rdf['name']}</strong>
+                <br>
+                {rdf['description']}
+                <br>Try model with your own image ({input_info}).
+                Drag and drop an image in the box above and click 'Submit'.
+            </p>
+        </div>
+        """
+            
+        viewer = await api.createWindow(src="https://kaibu.org/#/app", name=model_id)
+
+        async def form_submit_callback(fields):
+            file_path = fields['Select file']
+            output_tensor = await self.run_model(model_id, rdf, file_path)
+            output_spec = rdf['outputs'][0]
+            await self.display_output(viewer, output_spec, output_tensor)
+
+        await viewer.add_widget(
+            {
+                "_rintf": True,
+                "name": "My Form",
+                "type": "form",
+                "form_submit_callback": form_submit_callback,
+                "fields": [
+                    {
+                        "label": "Select file",
+                        "type": "button",
+                        "callback": self.select_file
+                    },
+                    {
+                        "html": info
+                    },
+                ],
+            })
+
+api.export(ImJoyPlugin())
+</script>
+    

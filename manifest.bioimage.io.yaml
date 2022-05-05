@@ -26,6 +26,10 @@ config:
   url_root: https://raw.githubusercontent.com/imjoy-team/bioimage-io-models/master
 
 collection:
+  - id: GenericBioEngineApp
+    name: GenericBioEngineApp
+    type: application
+    source: https://raw.githubusercontent.com/imjoy-team/bioimage-io-models/master/src/generic-bioengine-app.imjoy.html
   - id: BioImageIO-Packager
     name: BioImageIO-Packager
     type: application
