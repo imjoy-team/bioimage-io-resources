@@ -57,7 +57,8 @@ collection:
     type: dataset
     name: LuCa-7color
     description: Sample PerkinElmer Vectra QPTIFF files (c) PerkinElmer (http://www.perkinelmer.com)
-    authors: ["Perkin Elmer"]
+    authors:
+    - name: "Perkin Elmer"
     tags: [OME-TIFF]
     license: "CC-BY 4.0"
     download_url: https://downloads.openmicroscopy.org/images/Vectra-QPTIFF/perkinelmer/PKI_scans/LuCa-7color_Scan1.qptiff
