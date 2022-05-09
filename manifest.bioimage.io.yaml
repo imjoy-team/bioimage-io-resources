@@ -64,7 +64,7 @@ collection:
     authors:
     - name: "Perkin Elmer"
     tags: [OME-TIFF]
-    license: "CC-BY 4.0"
+    license: "CC-BY-4.0"
     download_url: https://downloads.openmicroscopy.org/images/Vectra-QPTIFF/perkinelmer/PKI_scans/LuCa-7color_Scan1.qptiff
     source: https://viv-demo.storage.googleapis.com/LuCa-7color_Scan1/data.zarr/0
     covers:
