@@ -8,7 +8,7 @@ An generic BioEngine for processing images
 {
     "name": "GenericBioEngineApp",
     "type": "web-python",
-    "version": "0.1.0",
+    "version": "0.1.1",
     "description": "An generic BioEngine for processing images",
     "tags": [],
     "ui": "",
@@ -20,7 +20,7 @@ An generic BioEngine for processing images
     "api_version": "0.1.8",
     "env": "",
     "permissions": [],
-    "requirements": ["imageio"],
+    "requirements": ["imageio", "xarray"],
     "dependencies": []
 }
 </config>
@@ -33,19 +33,86 @@ import numpy as np
 import io
 import imageio
 from imjoy_rpc.utils import open_elfinder
+from typing import Dict, List, Optional, Sequence, Tuple, Union
+from xarray import DataArray
+
+def transform_input_image(image: np.ndarray, tensor_axes: str, image_axes: Optional[str] = None):
+    """Transform input image into output tensor with desired axes.
+    Args:
+        image: the input image
+        tensor_axes: the desired tensor axes
+        input_axes: the axes of the input image (optional)
+    """
+    # if the image axes are not given deduce them from the required axes and image shape
+    if image_axes is None:
+        has_z_axis = "z" in tensor_axes
+        ndim = image.ndim
+        if ndim == 2:
+            image_axes = "yx"
+        elif ndim == 3:
+            image_axes = "zyx" if has_z_axis else "cyx"
+        elif ndim == 4:
+            image_axes = "czyx"
+        elif ndim == 5:
+            image_axes = "bczyx"
+        else:
+            raise ValueError(f"Invalid number of image dimensions: {ndim}")
+    tensor = DataArray(image, dims=tuple(image_axes))
+    # expand the missing image axes
+    missing_axes = tuple(set(tensor_axes) - set(image_axes))
+    tensor = tensor.expand_dims(dim=missing_axes)
+    # transpose to the correct axis order
+    tensor = tensor.transpose(*tuple(tensor_axes))
+    # return numpy array
+    return tensor.values
+
+
+
+def _drop_axis_default(axis_name, axis_len):
+    # spatial axes: drop at middle coordnate
+    # other axes (channel or batch): drop at 0 coordinate
+    return axis_len // 2 if axis_name in "zyx" else 0
+
+
+def transform_output_tensor(tensor: np.ndarray, tensor_axes: str, output_axes: str, drop_function=_drop_axis_default):
+    """Transform output tensor into image with desired axes.
+    Args:
+        tensor: the output tensor
+        tensor_axes: bioimageio model spec
+        output_axes: the desired output axes
+        drop_function: function that determines how to drop unwanted axes
+    """
+    if len(tensor_axes) != tensor.ndim:
+        raise ValueError(f"Number of axes {len(tensor_axes)} and dimension of tensor {tensor.ndim} don't match")
+    shape = {ax_name: sh for ax_name, sh in zip(tensor_axes, tensor.shape)}
+    output = DataArray(tensor, dims=tuple(tensor_axes))
+    # drop unwanted axes
+    drop_axis_names = tuple(set(tensor_axes) - set(output_axes))
+    drop_axes = {ax_name: drop_function(ax_name, shape[ax_name]) for ax_name in drop_axis_names}
+    output = output[drop_axes]
+    # transpose to the desired axis order
+    output = output.transpose(*tuple(output_axes))
+    # return numpy array
+    return output.values
 
 async def transform_input(input_spec, input_array):
     axes = input_spec['axes']
-    if axes == 'bcyx' and len(input_array.shape) == 2:
-        return input_array[None, None, :, :]
-    raise NotImplementedError
+    input_array = transform_input_image(input_array, axes)
+    return input_array
+    # if axes == 'bcyx' and len(input_array.shape) == 2:
+    #     return input_array[None, None, :, :]
+    # raise NotImplementedError
 
 async def display_output(viewer, output_spec, output_array):
     axes = output_spec['axes']
-    if axes == 'bcyx':
-        output_img = output_array[0, :, :, :].transpose(1, 2, 0)
+    if "z" in axes:
+      output_img = transform_output_tensor(output_array, axes, "zyxc")
     else:
-        raise NotImplementedError
+      output_img = transform_output_tensor(output_array, axes, "yxc")
+    # if axes == 'bcyx':
+    #     output_img = output_array[0, :, :, :].transpose(1, 2, 0)
+    # else:
+    #     raise NotImplementedError
     await viewer.view_image(output_img)
 
 async def download_data(url):
