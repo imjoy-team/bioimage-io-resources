@@ -3,7 +3,7 @@
     "name": "HPA-Single-Cell",
     "type": "web-worker",
     "tags": [],
-    "version": "0.1.3",
+    "version": "0.1.4",
     "cover": "",
     "description": "Run the HPA single cell classification model via the the BioEngine",
     "icon": "https://raw.githubusercontent.com/ilastik/bioimage-io-models/07147313b07f6842f0b9890ee7a79e47c44258e5/image/circular-play-button.png",
@@ -129,7 +129,7 @@ api.export(new ImJoyPlugin())
     "api_version": "0.1.8",
     "env": "",
     "permissions": [],
-    "requirements": ["imjoy_rpc", "kaibu_utils", "numpy", "scipy", "scikit-image"],
+    "requirements": ["kaibu_utils", "numpy", "scipy", "scikit-image"],
     "dependencies": []
 }
 </config>
@@ -266,7 +266,7 @@ def label_cell(nuclei_pred, cell_pred):
     cell.
     The same value in cell mask and nuclei mask refers to the identical cell.
     NOTE: The nuclei labeling from this function will be sligthly
-    different from the values in :func:`label_nuclei` as this version
+    different from the values in :func: label_nuclei as this version
     will use information from the cell-predictions to make better
     estimates.
     """
