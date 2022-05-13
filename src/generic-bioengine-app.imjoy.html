@@ -20,94 +20,69 @@
 </config>
 
 <script lang="python">
+import os
+import io
+
+import imageio
+import numpy as np
+
 from imjoy import api
 from imjoy_rpc.hypha import connect_to_server
 from js import fetch
-import numpy as np
-import io
-import imageio
 from imjoy_rpc.utils import open_elfinder
 from typing import Dict, List, Optional, Sequence, Tuple, Union
 from xarray import DataArray
 
-def transform_input_image(image: np.ndarray, tensor_axes: str, image_axes: Optional[str] = None):
-    """Transform input image into output tensor with desired axes.
-    Args:
-        image: the input image
-        tensor_axes: the desired tensor axes
-        input_axes: the axes of the input image (optional)
-    """
-    # if the image axes are not given deduce them from the required axes and image shape
-    if image_axes is None:
-        has_z_axis = "z" in tensor_axes
-        ndim = image.ndim
-        if ndim == 2:
-            image_axes = "yx"
-        elif ndim == 3:
-            image_axes = "zyx" if has_z_axis else "cyx"
-        elif ndim == 4:
-            image_axes = "czyx"
-        elif ndim == 5:
-            image_axes = "bczyx"
-        else:
-            raise ValueError(f"Invalid number of image dimensions: {ndim}")
-    tensor = DataArray(image, dims=tuple(image_axes))
-    # expand the missing image axes
-    missing_axes = tuple(set(tensor_axes) - set(image_axes))
-    tensor = tensor.expand_dims(dim=missing_axes)
-    # transpose to the correct axis order
-    tensor = tensor.transpose(*tuple(tensor_axes))
-    # return numpy array
-    return tensor.values
+# helper functions
 
 
-
-def _drop_axis_default(axis_name, axis_len):
-    # spatial axes: drop at middle coordnate
-    # other axes (channel or batch): drop at 0 coordinate
-    return axis_len // 2 if axis_name in "zyx" else 0
-
-
-def transform_output_tensor(tensor: np.ndarray, tensor_axes: str, output_axes: str, drop_function=_drop_axis_default):
-    """Transform output tensor into image with desired axes.
-    Args:
-        tensor: the output tensor
-        tensor_axes: bioimageio model spec
-        output_axes: the desired output axes
-        drop_function: function that determines how to drop unwanted axes
-    """
-    if len(tensor_axes) != tensor.ndim:
-        raise ValueError(f"Number of axes {len(tensor_axes)} and dimension of tensor {tensor.ndim} don't match")
-    shape = {ax_name: sh for ax_name, sh in zip(tensor_axes, tensor.shape)}
-    output = DataArray(tensor, dims=tuple(tensor_axes))
-    # drop unwanted axes
-    drop_axis_names = tuple(set(tensor_axes) - set(output_axes))
+def map_axes(
+    input_array,
+    input_axes,
+    output_axes,
+    # spatial axes: drop at middle coordnate, other axes (channel or batch): drop at 0 coordinate
+    drop_function=lambda ax_name, ax_len: ax_len // 2 if ax_name in "zyx" else 0
+):
+    assert len(input_axes) == input_array.ndim, f"Number of axes {len(input_axes)} and dimension of input {input_array.ndim} don't match"
+    shape = {ax_name: sh for ax_name, sh in zip(input_axes, input_array.shape)}
+    output = DataArray(input_array, dims=tuple(input_axes))
+    
+    # drop axes not part of the output
+    drop_axis_names = tuple(set(input_axes) - set(output_axes))
     drop_axes = {ax_name: drop_function(ax_name, shape[ax_name]) for ax_name in drop_axis_names}
     output = output[drop_axes]
+    
+    # expand axes missing from the input
+    missing_axes = tuple(set(output_axes) - set(input_axes))
+    output = output.expand_dims(dim=missing_axes)
+    
     # transpose to the desired axis order
     output = output.transpose(*tuple(output_axes))
+    
     # return numpy array
     return output.values
 
-async def transform_input(input_spec, input_array):
-    axes = input_spec['axes']
-    input_array = transform_input_image(input_array, axes)
-    return input_array
-    # if axes == 'bcyx' and len(input_array.shape) == 2:
-    #     return input_array[None, None, :, :]
-    # raise NotImplementedError
 
-async def display_output(viewer, output_spec, output_array):
-    axes = output_spec['axes']
-    if "z" in axes:
-      output_img = transform_output_tensor(output_array, axes, "zyxc")
+# TODO handle more file formats, e.g. ome.zarr (for which we can read the axis info from the data)
+def load_image(file, tensor_axes, ext=None):
+    if ext == ".npy":
+        return np.load(file)
+    elif "z" in tensor_axes:
+        return imageio.volread(file)
     else:
-      output_img = transform_output_tensor(output_array, axes, "yxc")
-    # if axes == 'bcyx':
-    #     output_img = output_array[0, :, :, :].transpose(1, 2, 0)
-    # else:
-    #     raise NotImplementedError
-    await viewer.view_image(output_img)
+        return imageio.imread(file)
+
+
+async def display_image_data(viewer, array, axes, name):
+    target_axes = "czyx" if "z" in axes else "cyx"
+    img = map_axes(array, axes, target_axes)
+    await api.showMessage(f"Displaying {name} of shape: {img.shape}")
+    if img.shape[0] == 1:
+        await viewer.view_image(img[0], name=name)
+    else:
+        for c, chan in enumerate(img):
+            await viewer.view_image(chan, name=f"{name}-channel-{c}")
+
 
 async def download_data(url):
     response = await fetch(url)
@@ -115,6 +90,45 @@ async def download_data(url):
     bytes = bytes.to_py()
     buffer = io.BytesIO(bytes)
     return np.load(buffer)
+
+
+def get_default_image_axes(ndim, input_tensor_axes):
+    has_z_axis = "z" in input_tensor_axes
+    if ndim == 2:
+        axes = "yx"
+    elif ndim == 3:
+        axes = "zyx" if has_z_axis else "cyx"
+    elif ndim == 4:
+        axes = "czyx"
+    elif ndim == 5:
+        axes = "bczyx"
+    else:
+        raise ValueError(f"Invalid number of image dimensions: {ndim}")
+    return axes
+
+
+# default functions for
+# - displaying the input image
+# - transforming the input image to match the tensor expected by the model
+# - displaying the model output
+
+async def transform_input(image: np.ndarray, image_axes: str, output_axes: str):
+    """Transfor the input image into an output tensor with output_axes
+    
+    Args:
+        image: the input image
+        image_axes: the axes of the input image as simple string
+        output_axes: the axes of the output tensor that will be returned
+    """
+    return map_axes(image, image_axes, output_axes)
+
+
+async def display_input(viewer, input_array, input_axes):
+    await display_image_data(viewer, input_array, input_axes, "input")
+
+
+async def display_output(viewer, output_array, output_axes):
+    await display_image_data(viewer, output_array, output_axes, "output")
 
 class ImJoyPlugin():
     async def setup(self):
@@ -134,7 +148,7 @@ class ImJoyPlugin():
 
     async def select_file(self):
         fm = await api.showDialog(
-            src="https://lib.imjoy.io/elFinder"
+            src="https://jupyter.imjoy.io/elFinder"
         )
         ret = await fm.getSelections()
         if not ret:
@@ -144,20 +158,38 @@ class ImJoyPlugin():
 
     async def run(self, ctx):
         ctx = ctx or {}
-        model_info = ctx.get("data", {})
+        self.model_info = ctx.get("data", {})
         config = ctx.get('config', {})
         self.transform_input = config.get('transform_input', transform_input)
+        self.display_input = config.get('display_input', display_input)
         self.display_output = config.get('display_output', display_output)
         self.viewer = config.get('viewer')
         if not self.viewer:
             self.viewer = await api.createWindow(src="https://kaibu.org/#/app", name="GenericBioEngineApp")
-        await self.show_ui(model_info)
+        await self.show_ui(self.model_info)
 
-    async def run_model(self, model_id, rdf, file_path):
+    async def run_model(self, model_id, rdf, file_path, image_axes):
         await api.showMessage("Loading data...")
-        file = open_elfinder(file_path, 'rb')
-        img = imageio.imread(file)
-        img = await transform_input(rdf['inputs'][0], img)
+        
+        # NOTE: accessing input[0] here assumes that the model only has a single input tensor
+        input_spec = rdf["inputs"][0]
+        input_tensor_axes = input_spec["axes"]
+        
+        file = open_elfinder(file_path, "rb")
+        file_ext = os.path.splitext(file_path)[1]
+        img = load_image(file, input_tensor_axes, ext=file_ext)
+        await api.showMessage(f"Loaded input image of shape {img.shape}")
+        
+        if not image_axes or image_axes.strip() == "":
+            image_axes = get_default_image_axes(img.ndim, input_tensor_axes)
+            await api.showMessage(f"Image axes were not provided. They were automatically determined to be {image_axes}")
+        else:
+            await api.showMessage(f"Image axes were provided as {image_axes}")
+        assert len(image_axes) == img.ndim
+    
+        await self.display_input(self.viewer, img, image_axes)
+        img = await self.transform_input(img, image_axes, input_tensor_axes)
+        await api.showMessage(f"Input image was transformed into shape {img.shape} to fit the model")
         # input_data = await download_data(rdf['test_inputs'][0])
         await api.showMessage("Data loaded, running model...")
         result = await self.bioengine_execute(inputs=[img], model_id=model_id)
@@ -165,13 +197,36 @@ class ImJoyPlugin():
             await api.alert(f'Failed to run the model, error: {result["error"]}')
             raise Exception(result["error"])
         output = result['outputs'][0]
-        await api.showMessage("🎉Model execution completed!")
+        await api.showMessage(f"🎉Model execution completed! Got output tensor of shape {output.shape}")
         return output
 
-    async def show_ui(self, model_info):
-        # "10.5281/zenodo.5764892"
+    async def show_ui(self, model_info, default_axes=""):
         # not working: "10.5281/zenodo.6200635"
-        model_id = model_info.get('id', "10.5281/zenodo.5764892")
+        
+        # models for testing:
+        
+        # this model works!
+        # the live-cell model: 2d input data, 2 channel prediction
+        default_model = "10.5281/zenodo.5869899"
+        
+        # this model fails with some weird pytorch error, that looks like the weights are corrupted.
+        # maybe this fails because the weights are too large?! (340 MB) it works locally
+        # the cremi model: 3d input data, 1 channel prediction
+        # default_model = "10.5281/zenodo.5874741"
+        
+        # this model fails because the format version (0.4.6) is not supported by the spec installed here yet
+        # the arabidopsis leaf-segmentation: 3d input data, 1 channel prediction
+        # default_model = "10.5281/zenodo.6348728"
+        
+        # this model also fails due to version 0.4.6
+        # the arabidopsis ovules segmentation model: 3d input data, 1 channel prediction
+        # default_model = "10.5281/zenodo.5749843"
+        
+        # this model fails with a time-out, probably takes too long to predict 3d...
+        # a plantseg model: 3d input data, 1 channel prediction
+        # default_model = "10.5281/zenodo.6346511"
+        
+        model_id = model_info.get("id", default_model)
         try:
             result = await self.bioengine_execute(model_id=model_id, return_rdf=True)
             rdf = result["rdf"]
@@ -199,15 +254,17 @@ class ImJoyPlugin():
         """
 
         async def form_submit_callback(fields):
-            file_path = fields['Select file']
-            output_tensor = await self.run_model(model_id, rdf, file_path)
-            output_spec = rdf['outputs'][0]
-            await self.display_output(self.viewer, output_spec, output_tensor)
+            file_path = fields["Select file"]
+            image_axes = fields.get("Axes")
+            output_tensor = await self.run_model(model_id, rdf, file_path, image_axes)
+            output_spec = rdf["outputs"][0]
+            output_axes = output_spec["axes"]
+            await self.display_output(self.viewer, output_tensor, output_axes)
 
         await self.viewer.add_widget(
             {
                 "_rintf": True,
-                "name": "My Form",
+                "name": model_id,
                 "type": "form",
                 "form_submit_callback": form_submit_callback,
                 "fields": [
@@ -215,6 +272,11 @@ class ImJoyPlugin():
                         "label": "Select file",
                         "type": "button",
                         "callback": self.select_file
+                    },
+                    {
+                        "label": "Axes",
+                        "isRequired": False,
+                        "value": default_axes
                     },
                     {
                         "html": info
