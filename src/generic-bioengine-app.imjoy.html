@@ -226,7 +226,7 @@ class ImJoyPlugin():
         try:
             result = await self.bioengine_execute(model_id=model_id, return_rdf=True)
             rdf = result["rdf"]
-            weight_formats = list(ret["result"]["rdf"]["weights"].keys())
+            weight_formats = list(rdf["weights"].keys())
         except Exception as exp:
             await api.alert(f"Failed to find model ({model_id}) in the BioEngine, error: {exp}")
             return
