@@ -137,8 +137,8 @@ class ImJoyPlugin():
         )
         self.triton = await server.get_service("triton-client")
 
-    async def bioengine_execute(self, model_id, inputs=None, return_rdf=False,):
-        kwargs = {"model_id": model_id, "inputs": inputs, "return_rdf": return_rdf}
+    async def bioengine_execute(self, model_id, inputs=None, return_rdf=False, weight_format=None):
+        kwargs = {"model_id": model_id, "inputs": inputs, "return_rdf": return_rdf, "weight_format": weight_format}
         ret = await self.triton.execute(
             inputs=[kwargs],
             model_name="bioengine-model-runner",
@@ -148,7 +148,7 @@ class ImJoyPlugin():
 
     async def select_file(self):
         fm = await api.showDialog(
-            src="https://lib.imjoy.io/elFinder"
+            src="https://jupyter.imjoy.io/elFinder"
         )
         ret = await fm.getSelections()
         if not ret:
@@ -168,7 +168,7 @@ class ImJoyPlugin():
             self.viewer = await api.createWindow(src="https://kaibu.org/#/app", name="GenericBioEngineApp")
         await self.show_ui(self.model_info)
 
-    async def run_model(self, model_id, rdf, file_path, image_axes):
+    async def run_model(self, model_id, rdf, file_path, image_axes, weight_format):
         await api.showMessage("Loading data...")
         
         # NOTE: accessing input[0] here assumes that the model only has a single input tensor
@@ -192,7 +192,11 @@ class ImJoyPlugin():
         await api.showMessage(f"Input image was transformed into shape {img.shape} to fit the model")
         # input_data = await download_data(rdf['test_inputs'][0])
         await api.showMessage("Data loaded, running model...")
-        result = await self.bioengine_execute(inputs=[img], model_id=model_id)
+        try:
+            result = await self.bioengine_execute(inputs=[img], model_id=model_id, weight_format=weight_format)
+        except Exception as exp:
+            await api.alert(f"Failed to run model ({model_id}) in the BioEngine, error: {exp}")
+            return
         if not result["success"]:
             await api.alert(f'Failed to run the model, error: {result["error"]}')
             raise Exception(result["error"])
@@ -213,15 +217,7 @@ class ImJoyPlugin():
         # maybe this fails because the weights are too large?! (340 MB) it works locally
         # the cremi model: 3d input data, 1 channel prediction
         # default_model = "10.5281/zenodo.5874741"
-        
-        # this model fails because the format version (0.4.6) is not supported by the spec installed here yet
-        # the arabidopsis leaf-segmentation: 3d input data, 1 channel prediction
-        # default_model = "10.5281/zenodo.6348728"
-        
-        # this model also fails due to version 0.4.6
-        # the arabidopsis ovules segmentation model: 3d input data, 1 channel prediction
-        # default_model = "10.5281/zenodo.5749843"
-        
+
         # this model fails with a time-out, probably takes too long to predict 3d...
         # a plantseg model: 3d input data, 1 channel prediction
         # default_model = "10.5281/zenodo.6346511"
@@ -230,6 +226,7 @@ class ImJoyPlugin():
         try:
             result = await self.bioengine_execute(model_id=model_id, return_rdf=True)
             rdf = result["rdf"]
+            weight_formats = list(ret["result"]["rdf"]["weights"].keys())
         except Exception as exp:
             await api.alert(f"Failed to find model ({model_id}) in the BioEngine, error: {exp}")
             return
@@ -256,7 +253,8 @@ class ImJoyPlugin():
         async def form_submit_callback(fields):
             file_path = fields["Select file"]
             image_axes = fields.get("Axes")
-            output_tensor = await self.run_model(model_id, rdf, file_path, image_axes)
+            weight_format = fields.get("Weight Format")
+            output_tensor = await self.run_model(model_id, rdf, file_path, image_axes, weight_format)
             output_spec = rdf["outputs"][0]
             output_axes = output_spec["axes"]
             await self.display_output(self.viewer, output_tensor, output_axes)
@@ -272,6 +270,12 @@ class ImJoyPlugin():
                         "label": "Select file",
                         "type": "button",
                         "callback": self.select_file
+                    },
+                    {
+                        "label": "Weight Format",
+                        "type": "select",
+                        "placeholder": "Select a weight format",
+                        "options": weight_formats
                     },
                     {
                         "label": "Axes",
