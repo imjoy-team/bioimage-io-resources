@@ -148,7 +148,7 @@ class ImJoyPlugin():
 
     async def select_file(self):
         fm = await api.showDialog(
-            src="https://jupyter.imjoy.io/elFinder"
+            src="https://lib.imjoy.io/elFinder"
         )
         ret = await fm.getSelections()
         if not ret:
