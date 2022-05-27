@@ -196,7 +196,7 @@ class ImJoyPlugin():
             result = await self.bioengine_execute(inputs=[img], model_id=model_id, weight_format=weight_format)
         except Exception as exp:
             await api.alert(f"Failed to run model ({model_id}) in the BioEngine, error: {exp}")
-            return
+            raise
         if not result["success"]:
             await api.alert(f'Failed to run the model, error: {result["error"]}')
             raise Exception(result["error"])
