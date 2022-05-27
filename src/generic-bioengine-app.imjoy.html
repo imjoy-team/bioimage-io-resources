@@ -133,7 +133,7 @@ async def display_output(viewer, output_array, output_axes):
 class ImJoyPlugin():
     async def setup(self):
         server = await connect_to_server(
-            {"name": "test client", "server_url": "https://ai.imjoy.io"}
+            {"name": "test client", "server_url": "https://ai.imjoy.io", "method_timeout": 30}
         )
         self.triton = await server.get_service("triton-client")
 
