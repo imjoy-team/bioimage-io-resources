@@ -160,7 +160,9 @@ class ImJoyPlugin():
 
     async def select_file(self):
         fm = await api.showDialog(
-            src="https://lib.imjoy.io/elFinder"
+            src="https://lib.imjoy.io/elFinder",
+            name="elFinder File Manager",
+            fullscreen=True
         )
         ret = await fm.getSelections()
         if not ret:
@@ -177,7 +179,7 @@ class ImJoyPlugin():
         self.display_output = config.get('display_output', display_output)
         self.viewer = config.get('viewer')
         if not self.viewer:
-            self.viewer = await api.createWindow(src="https://kaibu.org/#/app", name="GenericBioEngineApp")
+            self.viewer = await api.createWindow(src="https://kaibu.org/#/app", name="Test Run with BioEngine", fullscreen=True)
         await self.show_ui(self.model_info)
 
     async def run_model(self, model_id, rdf, file_path, image_axes, weight_format):
