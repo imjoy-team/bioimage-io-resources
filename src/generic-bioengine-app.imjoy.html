@@ -74,14 +74,10 @@ def load_image(file, tensor_axes, ext=None):
 
 
 async def display_image_data(viewer, array, axes, name):
-    target_axes = "czyx" if "z" in axes else "cyx"
+    target_axes = "zyxc" if "z" in axes else "yxc"
     img = map_axes(array, axes, target_axes)
     await api.showMessage(f"Displaying {name} of shape: {img.shape}")
-    if img.shape[0] == 1:
-        await viewer.view_image(img[0], name=name)
-    else:
-        for c, chan in enumerate(img):
-            await viewer.view_image(chan, name=f"{name}-channel-{c}")
+    await viewer.view_image(img, name=name)
 
 
 async def download_data(url):
@@ -92,16 +88,34 @@ async def download_data(url):
     return np.load(buffer)
 
 
-def get_default_image_axes(ndim, input_tensor_axes):
+def is_channel_first(shape):
+    if len(shape) == 5:  # with batch dimension
+        shape = shape[1:]
+    min_dim = np.argmin(list(shape))
+    if min_dim == 0:  # easy case: channel first
+        return True
+    elif min_dim == len(shape) - 1:  # easy case: channel last
+        return False
+    else:  # hard case: can't figure it out, just guess channel first
+        return True
+    
+
+def get_default_image_axes(shape, input_tensor_axes):
+    ndim = len(shape)
     has_z_axis = "z" in input_tensor_axes
     if ndim == 2:
         axes = "yx"
+    elif ndim == 3 and has_z_axis:
+        axes = "zyx"
     elif ndim == 3:
-        axes = "zyx" if has_z_axis else "cyx"
+        channel_first = is_channel_first(shape)
+        axes = "cyx" if channel_first else "yxc"
     elif ndim == 4:
-        axes = "czyx"
+        channel_first = is_channel_first(shape)
+        axes = "czyx" if channel_first else "zyxc"
     elif ndim == 5:
-        axes = "bczyx"
+        channel_first = is_channel_first(shape)
+        axes = "bczyx" if channel_first else "bzyxc"
     else:
         raise ValueError(f"Invalid number of image dimensions: {ndim}")
     return axes
@@ -111,7 +125,6 @@ def get_default_image_axes(ndim, input_tensor_axes):
 # - displaying the input image
 # - transforming the input image to match the tensor expected by the model
 # - displaying the model output
-
 async def transform_input(image: np.ndarray, image_axes: str, output_axes: str):
     """Transfor the input image into an output tensor with output_axes
     
@@ -181,7 +194,7 @@ class ImJoyPlugin():
         await api.showMessage(f"Loaded input image of shape {img.shape}")
         
         if not image_axes or image_axes.strip() == "":
-            image_axes = get_default_image_axes(img.ndim, input_tensor_axes)
+            image_axes = get_default_image_axes(img.shape, input_tensor_axes)
             await api.showMessage(f"Image axes were not provided. They were automatically determined to be {image_axes}")
         else:
             await api.showMessage(f"Image axes were provided as {image_axes}")
@@ -205,22 +218,24 @@ class ImJoyPlugin():
         return output
 
     async def show_ui(self, model_info, default_axes=""):
-        # not working: "10.5281/zenodo.6200635"
-        
         # models for testing:
+        
+        # inference for this model works, but the prediction looks a bit weird
+        # the hpa model: 2d input data with channels, multichannel prediction
+        # example image: https://images.proteinatlas.org/115/672_E2_1_blue_red_green.jpg
+        # default_model = "10.5281/zenodo.6200999"
         
         # this model works!
         # the live-cell model: 2d input data, 2 channel prediction
-        default_model = "10.5281/zenodo.5869899"
+        # default_model = "10.5281/zenodo.5869899"
+        
+        #mito-em model: 3d data with two output channels
+        # default_model = "10.5281/zenodo.5874841"
         
         # this model fails with some weird pytorch error, that looks like the weights are corrupted.
         # maybe this fails because the weights are too large?! (340 MB) it works locally
         # the cremi model: 3d input data, 1 channel prediction
-        # default_model = "10.5281/zenodo.5874741"
-
-        # this model fails with a time-out, probably takes too long to predict 3d...
-        # a plantseg model: 3d input data, 1 channel prediction
-        # default_model = "10.5281/zenodo.6346511"
+        default_model = "10.5281/zenodo.5874741"
         
         model_id = model_info.get("id", default_model)
         try:
