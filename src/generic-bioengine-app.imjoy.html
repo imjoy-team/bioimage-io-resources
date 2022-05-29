@@ -109,9 +109,12 @@ def get_default_image_axes(shape, input_tensor_axes):
     elif ndim == 3:
         channel_first = is_channel_first(shape)
         axes = "cyx" if channel_first else "yxc"
-    elif ndim == 4:
+    elif ndim == 4 and has_z_axis:
         channel_first = is_channel_first(shape)
         axes = "czyx" if channel_first else "zyxc"
+    elif ndim == 4:
+        channel_first = is_channel_first(shape)
+        axes = "bcyx" if channel_first else "byxc"
     elif ndim == 5:
         channel_first = is_channel_first(shape)
         axes = "bczyx" if channel_first else "bzyxc"
