@@ -278,6 +278,8 @@ class ImJoyPlugin():
             file_path = fields["Select file"]
             image_axes = fields.get("Axes (optional)", None)
             weight_format = fields.get("Weight Format (optional)", None)
+            if not weight_format or not weight_format.strip():
+                weight_format = None
             output_tensor = await self.run_model(model_id, rdf, file_path, image_axes, weight_format)
             output_spec = rdf["outputs"][0]
             output_axes = output_spec["axes"]
