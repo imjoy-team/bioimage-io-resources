@@ -249,7 +249,20 @@ class ImJoyPlugin():
         except Exception as exp:
             await api.alert(f"Failed to find model ({model_id}) in the BioEngine, error: {exp}")
             return
-        input_info = f", expected axes: {str(rdf['inputs'][0]['axes'])}, shape spec: {str(rdf['inputs'][0]['shape'])}"
+
+        # TODO the axis spec should be further simplified, e.g. we don't need the 'b' axis here, and if we have a single input channel we also don't need 'c'
+        # in this case, we also need to remove the corresponding axes from the shape spec
+        axis_spec = rdf['inputs'][0]['axes']
+        shape_spec = rdf['inputs'][0]['shape']
+
+        if isinstance(shape_spec, (list, tuple)):  # explicit shape, we can just print it
+            input_info = f", expected axes: {axis_spec}, expected shape: {shape_spec}"
+        else:  # implicit shape, we need to process this a bit so that it makes sense for users
+            min_, step = shape_spec['min'], shape_spec['step']
+            example_shape = [mi + 2 * st for mi, st in zip(min_, step)]
+            shape_msg = f"minimum shape: {min_}, valid shape increment: {step}. For example the shape {example_shape} is valid"
+            input_info = f", expected axes: {axis_spec}, expected shape: {shape_msg}"
+
         if "sample_inputs" in rdf:
             sample_input_url = rdf['sample_inputs'][0]
             input_info = f", <a href='{sample_input_url}' target='_blank'>sample input image</a>" + input_info
