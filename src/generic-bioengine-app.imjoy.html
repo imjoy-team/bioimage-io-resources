@@ -2,7 +2,7 @@
 {
     "name": "GenericBioEngineApp",
     "type": "web-python",
-    "version": "0.1.4",
+    "version": "0.1.5",
     "description": "An generic BioEngine for processing images",
     "tags": [],
     "ui": "",
@@ -291,15 +291,21 @@ class ImJoyPlugin():
         """
 
         async def form_submit_callback(fields):
-            file_path = fields["Select file"]
-            image_axes = fields.get("Axes (optional)", None)
-            weight_format = fields.get("Weight Format (optional)", None)
-            if not weight_format or not weight_format.strip():
-                weight_format = None
-            output_tensor = await self.run_model(model_id, rdf, file_path, image_axes, weight_format)
-            output_spec = rdf["outputs"][0]
-            output_axes = output_spec["axes"]
-            await self.display_output(self.viewer, output_tensor, output_axes)
+            await self.viewer.set_loader(True)
+            try:
+                file_path = fields["Select file"]
+                image_axes = fields.get("Axes (optional)", None)
+                weight_format = fields.get("Weight Format (optional)", None)
+                if not weight_format or not weight_format.strip():
+                    weight_format = None
+                output_tensor = await self.run_model(model_id, rdf, file_path, image_axes, weight_format)
+                output_spec = rdf["outputs"][0]
+                output_axes = output_spec["axes"]
+                await self.display_output(self.viewer, output_tensor, output_axes)
+            except Exception as exp:
+                await api.alert(f"Failed to run model ({model_id}) in the BioEngine, error: {exp}")
+            finally:
+                await self.viewer.set_loader(False)
 
         await self.viewer.add_widget(
             {
