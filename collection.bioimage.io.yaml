@@ -24,6 +24,14 @@ config:
     - application
   default_type: application
   url_root: https://raw.githubusercontent.com/imjoy-team/bioimage-io-models/master
+  docs: https://imjoy.io/docs/#/
+  contact:
+    - name: Wei Ouyang
+      email: wei.ouyang@scilifelab.se
+      github: oeway
+      affiliation:
+        - name: KTH
+          url: https://www.kth.se/en
 
 collection:
   - id: GenericBioEngineApp
