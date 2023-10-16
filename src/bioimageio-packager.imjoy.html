@@ -68,7 +68,7 @@ async function fetchFile(url, showMessage, showProgress){
       showProgress(progressEvent.loaded/progressEvent.total)
     }
   })
-  const filename = url.split('/').pop().split('#')[0].split('?')[0];
+  const filename = getFileName(url).slice(2);
   // const blob = new Blob([response.data]);
   // const file = new File([blob], filename, {type: "application/octet-stream", lastModified: Date.now()});
   return {name: filename, data: new Uint8Array(response.data)}
@@ -84,7 +84,11 @@ async function resolveUrl(rootUrl, url){
 }
 
 function getFileName(url){
-  return './' + url.split('/').pop().split('#')[0].split('?')[0]
+  const parts = url.split('/');
+  // Remove the last element 'content'
+  parts.pop();
+  // Take the last element which should be the file name
+  return './' + parts.pop().split('#')[0].split('?')[0];
 }
 
 async function fileExists(rootUrl, url){
@@ -305,7 +309,7 @@ class ImJoyPlugin {
 
   async run(ctx) {
     if(!ctx.data || !ctx.data.source){
-      const specUrl = await api.prompt("Please paste the model spec url here", "https://raw.githubusercontent.com/deepimagej/models/master/defcon_density_map_estimation/model.yaml")
+      const specUrl = await api.prompt("Please paste the model spec url here", "https://bioimage-io.github.io/collection-bioimage-io/rdfs/10.5281/zenodo.5749843/5888237/rdf.yaml")
       if(!specUrl) return
       app.modelInfo = {
         name: getFileName(specUrl),
