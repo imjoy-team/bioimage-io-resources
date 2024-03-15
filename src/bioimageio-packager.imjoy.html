@@ -303,7 +303,7 @@ const app = new Vue({
 
 class ImJoyPlugin {
   async setup() {
-    const response = await fetch("https://raw.githubusercontent.com/bioimage-io/spec-bioimage-io/gh-pages/weight_formats_spec.json")
+    const response = await fetch("https://raw.githubusercontent.com/imjoy-team/bioimage-io-resources/master/consumer_weights_preferences.json")
     this.weight_formats_spec = JSON.parse(await response.text())
   }
 
