@@ -13,6 +13,6 @@ jobs:
     - name: checkout
       uses: actions/checkout@v2
     - name: install bioimageio.spec
-      run: pip install bioimageio.spec lxml
+      run: pip install "bioimageio.spec<0.5" lxml
     - name: validate collection
       run: bioimageio validate-partner-collection collection.bioimage.io.yaml
