@@ -68,8 +68,6 @@ async function fetchFile(url, showMessage, showProgress){
       showProgress(progressEvent.loaded/progressEvent.total)
     }
   })
-    
-    debugger
   const filename = getFileName(url).slice(2)
   // const blob = new Blob([response.data]);
   // const file = new File([blob], filename, {type: "application/octet-stream", lastModified: Date.now()});
