@@ -4,7 +4,7 @@
   "type": "window",
   "tags": [],
   "ui": "",
-  "version": "0.3.4",
+  "version": "0.3.5",
   "api_version": "0.1.7",
   "description": "Exporting BioImage.IO model packages from the model description file",
   "icon": "https://raw.githubusercontent.com/imjoy-team/bioimage-io-models/master/asset/download-icon.png",
@@ -160,10 +160,16 @@ async function downloadModel(rootUrl, spec, weightsFormat, showMessage, showProg
   // after 0.4.0, rename source to architecture
   if(spec.weights[weightsFormat]){
     const wformat = spec.weights[weightsFormat];
-    if(wformat.architecture && wformat.architecture.includes(':')){
-      const tmp = wformat.architecture.split(':');
-      const src = tmp.slice(0, tmp.length-1).join(":") // e.g. ./mynetwork:UNet
-      files.push(src)
+    if(wformat.architecture){
+      if(typeof wformat.architecture === "string" && wformat.architecture.includes(':')){
+          const tmp = wformat.architecture.split(':');
+          const src = tmp.slice(0, tmp.length-1).join(":") // e.g. ./mynetwork:UNet
+          files.push(src)
+          
+      }
+      else if(wformat.architecture.source){
+          files.push(wformat.architecture.source)
+      }
       exportSpec.weights[weightsFormat].architecture = wformat.architecture
     }
     if(wformat.dependencies && wformat.dependencies.includes(':')){
