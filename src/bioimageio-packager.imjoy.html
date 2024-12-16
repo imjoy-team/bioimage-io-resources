@@ -134,7 +134,7 @@ async function downloadModel(rootUrl, spec, weightsFormat, showMessage, showProg
         files.push(fs[i])
       }
       else{
-        exportedFs[i] = getFileName(fs[i].source)
+        exportedFs[i] = {source: getFileName(fs[i].source), sha256: fs[i].sha256}
         files.push(fs[i].source)
       }
     }
@@ -149,7 +149,7 @@ async function downloadModel(rootUrl, spec, weightsFormat, showMessage, showProg
         files.push(fs[i])
       }
       else{
-        exportedFs[i] = getFileName(fs[i].source)
+        exportedFs[i] = {source: getFileName(fs[i].source), sha256: fs[i].sha256}
         files.push(fs[i].source)
       }
     }
@@ -163,7 +163,7 @@ async function downloadModel(rootUrl, spec, weightsFormat, showMessage, showProg
         files.push(fs[i])
       }
       else{
-        exportedFs[i] = getFileName(fs[i].source)
+        exportedFs[i] = {source: getFileName(fs[i].source), sha256: fs[i].sha256}
         files.push(fs[i].source)
       }
     }
@@ -178,7 +178,7 @@ async function downloadModel(rootUrl, spec, weightsFormat, showMessage, showProg
         files.push(fs[i])
       }
       else{
-        exportedFs[i] = getFileName(fs[i].source)
+        exportedFs[i] = {source: getFileName(fs[i].source), sha256: fs[i].sha256}
         files.push(fs[i].source)
       }
     }
